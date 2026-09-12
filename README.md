@@ -8,8 +8,9 @@ Seed data lives in `prisma/seed.ts` only. It is not hardcoded in pages.
 
 ```bash
 cp .env.example .env
+# Fill DATABASE_URL + DIRECT_URL with Neon pooled + direct URLs
 npm install
-npx prisma migrate dev
+npx prisma migrate deploy
 npm run db:seed
 npm run dev
 ```
@@ -38,32 +39,34 @@ Starter brief is published as **active**. Seeded Relayed still keeps its origina
 
 **One email, one role:** Brand and creator accounts must use different emails. Signing up as the other role with an existing email is rejected.
 
-## Database (SQLite ↔ Postgres)
+## Database (Postgres / Neon)
 
-Connection is always via `DATABASE_URL` in `.env` (see `.env.example`). The Prisma schema and app code are written to stay swappable:
+Connection is always via `DATABASE_URL` + `DIRECT_URL` in `.env` (see `.env.example`). The Prisma schema and app code are provider-agnostic for app queries:
 
 - No raw SQL (`$queryRaw` / `$executeRaw`)
 - No provider-specific `@db.*` column types
 - Lists/JSON stored as `String` and parsed in app code
 - Booleans, `DateTime`, and `cuid()` ids only
 
-**Local (default):** `provider = "sqlite"` and `DATABASE_URL="file:./dev.db"`.
+**Provider:** `postgresql` in `prisma/schema.prisma`.
 
-**Vercel (Neon or Supabase):** SQLite will not persist on the serverless filesystem. Switch before deploy:
+**Neon URL roles:**
 
-1. Create a free Postgres database (Neon or Supabase).
-2. In `prisma/schema.prisma`, set `provider = "postgresql"`.
-3. Set `DATABASE_URL` to the **pooled** connection string in the Vercel project env.
-4. Optionally set `DIRECT_URL` to the **direct** (non-pooled) URL and add `directUrl = env("DIRECT_URL")` under `datasource db` so `prisma migrate` is reliable with poolers.
-5. Set `SESSION_SECRET` to a long random string.
-6. Apply schema on the empty Postgres DB, then seed:
-   ```bash
-   npx prisma db push
-   npm run db:seed
-   ```
-   Existing SQLite migration SQL under `prisma/migrations/` is for local SQLite. For a clean Postgres baseline you can `db push` (demo-friendly) or regenerate migrations after switching the provider. Do not reuse the SQLite migration files as-is against Postgres.
+| Env var | Use | Neon string |
+| --- | --- | --- |
+| `DATABASE_URL` | App / Prisma Client (runtime) | **Pooled** (`…-pooler…`). Add `sslmode=require&pgbouncer=true&connect_timeout=15` |
+| `DIRECT_URL` | `prisma migrate` | **Direct** (no `-pooler`). Add `sslmode=require` |
 
-Local SQLite and hosted Postgres can coexist as long as each environment has the matching `provider` + `DATABASE_URL` pair.
+**Vercel env:** set `DATABASE_URL`, `DIRECT_URL`, `SESSION_SECRET`, plus Resend/Groq keys as needed. Then apply schema and seed against Neon (from your machine, with those URLs in `.env` or exported):
+
+```bash
+npx prisma migrate deploy
+npm run db:seed
+```
+
+`migrate deploy` applies `prisma/migrations/` (Postgres baseline). Seed wipes demo tables and reloads Relayed + Maya fixtures.
+
+Do **not** run the old SQLite `file:./dev.db` URL against this schema — local dev should use Neon (or another Postgres) with the same `DATABASE_URL` / `DIRECT_URL` pair.
 
 ## Scope
 

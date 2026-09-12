@@ -2,15 +2,12 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Local default: SQLite (file:./dev.db).
-// Vercel / Neon / Supabase: set provider = "postgresql" and point DATABASE_URL
-// at the pooled connection string. Optionally add:
-//   directUrl = env("DIRECT_URL")
-// for migrations against a non-pooled URL.
-// Schema + app queries stay provider-agnostic (no raw SQL, no @db.* native types).
+// Neon / Vercel Postgres (also works with any Postgres locally).
+// DATABASE_URL = pooled Neon URL (…-pooler…); DIRECT_URL = direct (non-pooler) URL for migrate.
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {

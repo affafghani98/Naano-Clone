@@ -17,7 +17,6 @@ type Props = {
 };
 
 export function BrandTopBar({ userName, walletBalanceCents }: Props) {
-  const [locale, setLocale] = useState<"EN" | "FR">("EN");
   const [open, setOpen] = useState<"started" | "bell" | "profile" | null>(null);
 
   function toggle(next: typeof open) {
@@ -32,15 +31,6 @@ export function BrandTopBar({ userName, walletBalanceCents }: Props) {
       >
         {formatEuro(walletBalanceCents)}
       </Link>
-
-      <button
-        type="button"
-        onClick={() => setLocale((current) => (current === "EN" ? "FR" : "EN"))}
-        className="rounded-full border border-neutral-200 px-3 py-1.5 text-xs font-medium"
-        aria-label="Language"
-      >
-        {locale}
-      </button>
 
       <div className="relative">
         <button

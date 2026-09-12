@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { redirectIfAuthenticated } from "@/lib/auth";
 import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/demo-account";
 import { AuthForm } from "../_components/auth-form";
 import { login } from "../actions/auth";
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  await redirectIfAuthenticated();
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col px-6 py-10">
       <Link href="/" className="text-lg font-semibold tracking-tight">

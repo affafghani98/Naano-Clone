@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { redirectIfAuthenticated } from "@/lib/auth";
 import { AuthForm } from "../_components/auth-form";
 import { registerBrand } from "../actions/auth";
 
@@ -8,6 +9,7 @@ export default async function RegisterPage({
 }: {
   searchParams: Promise<{ role?: string }>;
 }) {
+  await redirectIfAuthenticated();
   const { role } = await searchParams;
   if (role !== "saas") {
     redirect("/signup");

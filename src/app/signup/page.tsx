@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { redirectIfAuthenticated } from "@/lib/auth";
 
-export default function SignupPage() {
+export default async function SignupPage() {
+  await redirectIfAuthenticated();
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col px-6 py-10">
       <Link href="/" className="text-lg font-semibold tracking-tight">

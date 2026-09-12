@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { OnboardingWizard } from "./onboarding-wizard";
 
 export default async function OnboardingBrandPage() {
-  const current = await getCurrentUser();
-  if (!current) {
-    redirect("/login");
+  const current = await requireUser();
+  if (current.workspace.onboardingComplete) {
+    redirect("/brand");
   }
 
   return (

@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { db } from "./db";
 import { getSession } from "./session";
 
@@ -33,4 +34,20 @@ export async function getCurrentUser() {
   }
 
   return { user, workspace: membership.workspace };
+}
+
+export async function requireUser() {
+  const current = await getCurrentUser();
+  if (current) {
+    return current;
+  }
+  redirect("/api/session/clear");
+}
+
+export async function redirectIfAuthenticated() {
+  const current = await getCurrentUser();
+  if (!current) {
+    return;
+  }
+  redirect(current.workspace.onboardingComplete ? "/brand" : "/onboarding-brand");
 }

@@ -1,0 +1,29 @@
+import Link from "next/link";
+import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/demo-account";
+import { AuthForm } from "../_components/auth-form";
+import { login } from "../actions/auth";
+
+export default function LoginPage() {
+  return (
+    <main className="mx-auto flex min-h-screen max-w-md flex-col px-6 py-10">
+      <Link href="/" className="text-lg font-semibold tracking-tight">
+        Naano
+      </Link>
+      <section className="mt-16 space-y-6">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">Log in</h1>
+          <p className="mt-2 text-sm text-neutral-600">
+            Seeded demo: {DEMO_EMAIL} / {DEMO_PASSWORD}
+          </p>
+        </div>
+        <AuthForm action={login} submitLabel="Log in" />
+        <p className="text-sm text-neutral-600">
+          No account?{" "}
+          <Link href="/signup" className="underline">
+            Get started
+          </Link>
+        </p>
+      </section>
+    </main>
+  );
+}

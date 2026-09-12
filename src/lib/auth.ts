@@ -18,6 +18,7 @@ export async function getCurrentUser() {
           },
         },
       },
+      creatorProfile: true,
     },
   });
 
@@ -53,6 +54,7 @@ export async function getCurrentCreator() {
   const user = await db.user.findUnique({
     where: { id: session.userId },
     include: {
+      memberships: { include: { workspace: true } },
       creatorProfile: {
         include: { creator: true },
       },

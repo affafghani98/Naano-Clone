@@ -1,8 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
-import { COLLAB_STATUS_LABELS } from "@/lib/booking";
+import {
+  brandRespondToApplication,
+  type CollabActionState,
+} from "../../actions/collaborations";
+import { COLLAB_STATUS, COLLAB_STATUS_LABELS } from "@/lib/booking";
 import { formatEuro } from "@/lib/money";
 
 export type CollaborationRow = {
@@ -18,7 +22,7 @@ export type CollaborationRow = {
 };
 
 const TABS: {
-  id: "all" | "active" | "received" | "sent" | "todo" | "completed";
+  id: "all" | "active" | "received" | "sent" | "todo" | "completed" | "declined";
   label: string;
   statuses: string[] | null;
 }[] = [
@@ -32,6 +36,7 @@ const TABS: {
   { id: "sent", label: "Invitations sent", statuses: ["invitation_sent"] },
   { id: "todo", label: "To do", statuses: ["todo"] },
   { id: "completed", label: "Completed", statuses: ["completed"] },
+  { id: "declined", label: "Declined", statuses: ["declined"] },
 ];
 
 export function CollaborationsView({
@@ -57,7 +62,7 @@ export function CollaborationsView({
       <div>
         <h1 className="text-3xl font-semibold tracking-tight">Collaborations</h1>
         <p className="mt-1 text-sm text-neutral-600">
-          Bookings and offers waiting on the creator, then active work.
+          Bookings and offers waiting on the creator, plus applications you can accept.
         </p>
       </div>
 
@@ -116,7 +121,7 @@ export function CollaborationsView({
                 <th className="px-4 py-3 font-medium">Next action</th>
                 <th className="px-4 py-3 font-medium">Due date</th>
                 <th className="px-4 py-3 font-medium">Amount</th>
-                <th className="px-4 py-3 font-medium">Updated</th>
+                <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -124,6 +129,7 @@ export function CollaborationsView({
                 <tr key={row.id} className="border-t border-neutral-100">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={row.creatorPhotoUrl}
                         alt=""
@@ -144,7 +150,11 @@ export function CollaborationsView({
                   </td>
                   <td className="px-4 py-3">{formatEuro(row.amountCents)}</td>
                   <td className="px-4 py-3">
-                    {new Date(row.updatedAt).toLocaleDateString("en-GB")}
+                    {row.status === COLLAB_STATUS.invitationReceived ? (
+                      <RespondButtons collaborationId={row.id} />
+                    ) : (
+                      <span className="text-neutral-400">—</span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -153,5 +163,42 @@ export function CollaborationsView({
         </div>
       )}
     </section>
+  );
+}
+
+function RespondButtons({ collaborationId }: { collaborationId: string }) {
+  const [state, formAction, pending] = useActionState(
+    brandRespondToApplication,
+    {} as CollabActionState,
+  );
+
+  return (
+    <div className="space-y-1">
+      <div className="flex flex-wrap gap-2">
+        <form action={formAction}>
+          <input type="hidden" name="collaborationId" value={collaborationId} />
+          <input type="hidden" name="decision" value="accept" />
+          <button
+            type="submit"
+            disabled={pending}
+            className="rounded-full bg-neutral-950 px-3 py-1 text-xs font-medium text-white disabled:opacity-60"
+          >
+            Accept
+          </button>
+        </form>
+        <form action={formAction}>
+          <input type="hidden" name="collaborationId" value={collaborationId} />
+          <input type="hidden" name="decision" value="decline" />
+          <button
+            type="submit"
+            disabled={pending}
+            className="rounded-full border border-neutral-300 px-3 py-1 text-xs disabled:opacity-60"
+          >
+            Decline
+          </button>
+        </form>
+      </div>
+      {state.error ? <p className="text-xs text-red-700">{state.error}</p> : null}
+    </div>
   );
 }

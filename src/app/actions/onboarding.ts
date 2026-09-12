@@ -71,7 +71,7 @@ export async function completeOnboarding(formData: FormData) {
         workspaceId: current.workspace.id,
         title: profile.briefTitle,
         description: profile.briefDescription,
-        status: "draft",
+        status: "active",
         productSummary: profile.productSummary,
         audienceSummary: profile.audienceSummary,
       },

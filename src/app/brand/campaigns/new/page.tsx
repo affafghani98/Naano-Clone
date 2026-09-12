@@ -2,6 +2,12 @@ import Link from "next/link";
 
 const PATHS = [
   {
+    href: "/brand/campaigns/new/manual",
+    title: "Write a brief yourself",
+    body: "Title, description, product, and audience — publish when ready so creators can apply.",
+    cta: "Create brief",
+  },
+  {
     href: "/brand/campaigns/new/team",
     title: "Launch free with the Naano team",
     body: "Book a call and we’ll help you set up the brief, matching, and first bookings.",
@@ -32,8 +38,8 @@ export default function NewCampaignPage() {
           How do you want to launch your campaign?
         </h1>
         <p className="mt-2 text-sm text-neutral-600">
-          Pick a path to continue. AI drafting and link import are stubs in this
-          demo — the screens exist so nothing 404s.
+          Use “Write a brief yourself” for a live campaign creators can apply to.
+          AI and link import remain optional stubs.
         </p>
       </div>
 

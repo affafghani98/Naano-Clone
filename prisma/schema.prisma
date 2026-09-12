@@ -14,13 +14,24 @@ datasource db {
 }
 
 model User {
-  id             String          @id @default(cuid())
-  email          String          @unique
-  passwordHash   String
+  id             String            @id @default(cuid())
+  email          String            @unique
   name           String
-  createdAt      DateTime        @default(now())
+  createdAt      DateTime          @default(now())
   memberships    WorkspaceMember[]
   creatorProfile CreatorProfile?
+}
+
+model LoginCode {
+  id        String   @id @default(cuid())
+  email     String
+  codeHash  String
+  intent    String
+  name      String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
 }
 
 model Workspace {

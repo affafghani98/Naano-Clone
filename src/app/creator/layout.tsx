@@ -13,6 +13,11 @@ export default async function CreatorLayout({
   }
 
   return (
-    <CreatorShell userName={current.user.name}>{children}</CreatorShell>
+    <CreatorShell
+      userName={current.user.name}
+      canSwitchToBrand={current.user.memberships.length > 0}
+    >
+      {children}
+    </CreatorShell>
   );
 }

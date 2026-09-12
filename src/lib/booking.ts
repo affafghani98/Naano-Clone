@@ -10,6 +10,7 @@ export const COLLAB_STATUS = {
   active: "active",
   todo: "todo",
   completed: "completed",
+  declined: "declined",
 } as const;
 
 export const COLLAB_STATUS_LABELS: Record<string, string> = {
@@ -18,6 +19,7 @@ export const COLLAB_STATUS_LABELS: Record<string, string> = {
   active: "Active",
   todo: "To do",
   completed: "Completed",
+  declined: "Declined",
 };
 
 export const DISCOUNT_TIERS = [10, 20, 30] as const;

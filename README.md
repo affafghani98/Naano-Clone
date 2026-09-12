@@ -14,6 +14,8 @@ npm run db:seed
 npm run dev
 ```
 
+For real email delivery, set `RESEND_API_KEY` in `.env` (see `.env.example`). Without it, login codes are logged to the terminal as `[naano-auth]`.
+
 Open http://localhost:3000
 
 | Command | What it does |
@@ -23,15 +25,18 @@ Open http://localhost:3000
 
 Re-run seed or reset before recording a walkthrough so wallet, collaborations, and messages start clean.
 
-**Brand demo (after seed):** `demo@naano.clone` / `demo1234`  
-Skips onboarding and lands on `/brand` (workspace **Relayed**, empty wallet, 12 creators, starter draft brief, NaanoBot thread, 0 collaborations). Extra **active** campaigns exist for the creator Opportunities feed and also appear under Relayed Campaigns.
+**Brand demo (after seed):** On `/login`, click **Brand demo** (instant, no email code) → `/brand`  
+Workspace **Relayed**, empty wallet, 12 creators, starter draft brief, NaanoBot, 0 collaborations. Extra **active** campaigns exist for creator Opportunities.
 
-**Creator demo (after seed):** `creator@naano.clone` / `demo1234`  
-Skips onboarding and lands on `/creator` (Maya Chen marketplace profile, open opportunities, NaanoBot, empty collaborations until you apply or a brand books).
+**Creator demo (after seed):** On `/login`, click **Creator demo** → `/creator`  
+Maya Chen profile, open opportunities, NaanoBot.
 
-**New brand signup:** `/signup` → `/register?role=saas` → `/onboarding-brand` → `/brand`
+**New brand signup:** `/signup` → `/register?role=saas` → email + 6-digit code → `/onboarding-brand` → `/brand`  
+Starter brief is published as **active**. Seeded Relayed still keeps its original draft brief plus separate active campaigns.
 
-**New creator signup:** `/signup` → `/register?role=influencer` → `/onboarding` → `/creator`
+**New creator signup:** `/signup` → `/register?role=influencer` → email + 6-digit code → `/onboarding` → `/creator`
+
+**Same email, both roles:** Register the second role with the same email (verify via code), or use profile menu → Add creator profile / Add brand workspace. Login shows a role chooser when both exist.
 
 ## Database (SQLite ↔ Postgres)
 
@@ -63,7 +68,7 @@ Local SQLite and hosted Postgres can coexist as long as each environment has the
 ## Scope
 
 - **Brand + creator sides.** Creator signup, onboarding, and dashboard are included; payments and OAuth stay mocked.
-- **Auth:** email/password only. No real LinkedIn/Google OAuth.
+- **Auth:** email + one-time 6-digit code via Resend (no passwords, no OAuth). Without `RESEND_API_KEY`, codes are printed in the server terminal. Seeded demos use instant login buttons on `/login`.
 - **Payments:** fake wallet top-ups and booking debits on the brand side. Creator withdraw / Stripe / bank connect are UI stubs.
 - **AI:** onboarding website analysis, campaign “Create with AI”, and creator “Copy for my AI” are mocked or copy-prompt only. No model calls.
 - **Pixel Naano:** install CTA only. No real tracking script.
@@ -86,20 +91,25 @@ Local SQLite and hosted Postgres can coexist as long as each environment has the
 | EN/FR language toggle | Not built (English only) |
 | Multi-brand workspace switcher | Real create + switch; new workspace runs onboarding |
 | Notifications bell | Empty stub menu |
-| Creator LinkedIn/Google OAuth | Disabled buttons — use email |
+| Creator LinkedIn/Google OAuth | Removed — email signup only |
 | Creator LinkedIn scrape | Mock profile from pasted URL |
-| Creator withdraw / Stripe / bank | Non-functional stubs |
+| Creator withdraw / Stripe / bank | Empty-state panel (no dead Connect buttons) |
 | Creator affiliate payouts | Static mock UI |
-| Creator “Add LinkedIn experience” | Stub |
+| Brand write-a-brief campaign create | Real — can publish to Opportunities |
+| Brand publish/unpublish campaign | Real on campaign detail |
+| Brand accept/decline applications | Real on Collaborations |
+| Creator accept/decline bookings | Real on Collaborations (decline refunds wallet) |
 
 ## Assumptions
 
 - After **Book** / **Add and continue**: confirmation notice, then **Collaborations**. Not confirmed on the live site.
 - **Onboarding step 3** was not captured on live Naano. This rebuild shows a short “marketplace is ready” screen, then Overview.
-- Booking is **wallet-funded**. Insufficient funds block the booking; the wallet cannot go negative.
+- Booking is **wallet-funded**. Insufficient funds block the booking; the wallet cannot go negative. Creator decline refunds the brand wallet.
 - **Direct Book** books at the listed price and does **not** attach a campaign brief. **Negotiate** can attach a campaign via the Campaign dropdown. Messages campaign filter only shows threads whose booking linked that brief.
-- Creator message threads open at **`invitation_sent`** (when the brand books/offers). Creator **Apply** creates an `invitation_received` collaboration and thread so both sides see it.
+- Creator message threads open at **`invitation_sent`** (when the brand books/offers). Creator **Apply** creates an `invitation_received` collaboration and thread so both sides see it. Brand Accept / Creator Accept move the collab to `active`.
+- One email may hold both a brand workspace and a creator profile; login then shows `/choose-role`.
+- Auth uses email + one-time code (10-minute expiry, hashed at rest). Demo accounts use instant buttons on `/login`.
 - Results reach/clicks are **mocked**; attribution rows use creators you actually booked.
 - Collaborations has the core table and status tabs. Campaign filter, search, and tab counts were deferred.
 - Website analysis progress is mocked (~16s), not a live crawl.
-- Creator Opportunities list open (`active`) campaigns only; Relayed’s original starter brief stays `draft` for the brand demo.
+- Creator Opportunities list open (`active`) campaigns only; Relayed’s original starter brief stays `draft` for the brand demo. Fresh brand onboarding creates an **active** starter brief.

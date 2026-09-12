@@ -8,6 +8,7 @@ type Props = {
   currentWorkspaceId: string;
   workspaces: WorkspaceOption[];
   walletBalanceCents: number;
+  canSwitchToCreator?: boolean;
   children: React.ReactNode;
 };
 
@@ -16,6 +17,7 @@ export function BrandShell({
   currentWorkspaceId,
   workspaces,
   walletBalanceCents,
+  canSwitchToCreator = false,
   children,
 }: Props) {
   return (
@@ -25,7 +27,11 @@ export function BrandShell({
         workspaces={workspaces}
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <BrandTopBar userName={userName} walletBalanceCents={walletBalanceCents} />
+        <BrandTopBar
+          userName={userName}
+          walletBalanceCents={walletBalanceCents}
+          canSwitchToCreator={canSwitchToCreator}
+        />
         <main className="flex-1 px-8 py-8">{children}</main>
         <ChatStub />
       </div>

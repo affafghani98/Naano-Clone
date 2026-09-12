@@ -1,7 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { COLLAB_STATUS_LABELS } from "@/lib/booking";
+import { useActionState, useMemo, useState } from "react";
+import {
+  creatorRespondToBooking,
+  type CollabActionState,
+} from "../../actions/collaborations";
+import { COLLAB_STATUS, COLLAB_STATUS_LABELS } from "@/lib/booking";
 import { formatEuro } from "@/lib/money";
 
 export type CreatorCollabRow = {
@@ -28,7 +32,7 @@ const TABS: {
   {
     id: "needs",
     label: "Needs action",
-    statuses: ["invitation_received", "invitation_sent"],
+    statuses: ["invitation_sent"],
   },
   {
     id: "applications",
@@ -56,8 +60,7 @@ export function CollaborationsView({ rows }: { rows: CreatorCollabRow[] }) {
       <div>
         <h1 className="text-3xl font-semibold tracking-tight">Collaborations</h1>
         <p className="mt-1 text-sm text-neutral-600">
-          Every step tells you where you stand, what to do, and what happens if you do
-          nothing.
+          Accept brand bookings, or track applications waiting on the brand.
         </p>
       </div>
 
@@ -90,16 +93,16 @@ export function CollaborationsView({ rows }: { rows: CreatorCollabRow[] }) {
         </div>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-neutral-200 bg-white">
-          <table className="w-full min-w-[780px] text-left text-sm">
+          <table className="w-full min-w-[860px] text-left text-sm">
             <thead className="border-b border-neutral-100 text-xs uppercase tracking-wide text-neutral-500">
               <tr>
                 <th className="px-4 py-3 font-medium">Brand</th>
                 <th className="px-4 py-3 font-medium">Campaign</th>
                 <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Performance</th>
                 <th className="px-4 py-3 font-medium">Next action</th>
                 <th className="px-4 py-3 font-medium">Due date</th>
                 <th className="px-4 py-3 font-medium">Your net</th>
+                <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -110,12 +113,18 @@ export function CollaborationsView({ rows }: { rows: CreatorCollabRow[] }) {
                   <td className="px-4 py-3">
                     {COLLAB_STATUS_LABELS[row.status] ?? row.status}
                   </td>
-                  <td className="px-4 py-3 text-neutral-500">—</td>
                   <td className="px-4 py-3">{row.nextAction ?? "—"}</td>
                   <td className="px-4 py-3">
                     {row.dueDate ? row.dueDate.slice(0, 10) : "—"}
                   </td>
                   <td className="px-4 py-3">{formatEuro(row.netCents)}</td>
+                  <td className="px-4 py-3">
+                    {row.status === COLLAB_STATUS.invitationSent ? (
+                      <RespondButtons collaborationId={row.id} />
+                    ) : (
+                      <span className="text-neutral-400">—</span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -123,5 +132,42 @@ export function CollaborationsView({ rows }: { rows: CreatorCollabRow[] }) {
         </div>
       )}
     </section>
+  );
+}
+
+function RespondButtons({ collaborationId }: { collaborationId: string }) {
+  const [state, formAction, pending] = useActionState(
+    creatorRespondToBooking,
+    {} as CollabActionState,
+  );
+
+  return (
+    <div className="space-y-1">
+      <div className="flex flex-wrap gap-2">
+        <form action={formAction}>
+          <input type="hidden" name="collaborationId" value={collaborationId} />
+          <input type="hidden" name="decision" value="accept" />
+          <button
+            type="submit"
+            disabled={pending}
+            className="rounded-full bg-neutral-950 px-3 py-1 text-xs font-medium text-white disabled:opacity-60"
+          >
+            Accept
+          </button>
+        </form>
+        <form action={formAction}>
+          <input type="hidden" name="collaborationId" value={collaborationId} />
+          <input type="hidden" name="decision" value="decline" />
+          <button
+            type="submit"
+            disabled={pending}
+            className="rounded-full border border-neutral-300 px-3 py-1 text-xs disabled:opacity-60"
+          >
+            Decline
+          </button>
+        </form>
+      </div>
+      {state.error ? <p className="text-xs text-red-700">{state.error}</p> : null}
+    </div>
   );
 }

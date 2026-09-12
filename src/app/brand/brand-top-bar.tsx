@@ -105,9 +105,13 @@ export function BrandTopBar({ userName, walletBalanceCents }: Props) {
             >
               Book a call
             </a>
-            <p className="rounded-lg px-2 py-1.5 text-neutral-400">
-              Integrations — out of scope
-            </p>
+            <Link
+              href="/brand/settings?tab=integrations"
+              className="block rounded-lg px-2 py-1.5 hover:bg-neutral-50"
+              onClick={() => setOpen(null)}
+            >
+              Integrations
+            </Link>
             <Link
               href="/brand/settings"
               className="block rounded-lg px-2 py-1.5 hover:bg-neutral-50"

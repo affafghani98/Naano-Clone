@@ -12,10 +12,17 @@ export default async function BrandLayout({
     redirect("/onboarding-brand");
   }
 
+  const workspaces = current.user.memberships.map((membership) => ({
+    id: membership.workspace.id,
+    name: membership.workspace.name,
+    onboardingComplete: membership.workspace.onboardingComplete,
+  }));
+
   return (
     <BrandShell
       userName={current.user.name}
-      workspaceName={current.workspace.name}
+      currentWorkspaceId={current.workspace.id}
+      workspaces={workspaces}
       walletBalanceCents={current.workspace.walletBalanceCents}
     >
       {children}

@@ -527,6 +527,7 @@ async function reset() {
   await db.contentPost.deleteMany();
   await db.campaign.deleteMany();
   await db.icp.deleteMany();
+  await db.workspaceInvite.deleteMany();
   await db.workspaceMember.deleteMany();
   await db.workspace.deleteMany();
   await db.user.deleteMany();
@@ -592,6 +593,8 @@ async function seedDemoBrand() {
       websiteUrl: "https://www.relayed.example",
       valueProposition:
         "Relayed helps B2B SaaS teams turn customer conversations into a searchable source of truth for product, CS, and sales.",
+      industry: "SaaS",
+      companySize: "11-50",
       onboardingComplete: true,
       walletBalanceCents: 0,
       members: {

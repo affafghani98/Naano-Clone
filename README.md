@@ -46,11 +46,13 @@ Skips onboarding and lands on `/brand` (workspace **Relayed**, empty wallet, 12 
 | Campaign “Launch free with the Naano team” | Link-out to Cal.com stub |
 | Pixel Naano “Install the pixel” | Disabled button |
 | Persistent chat (“What would you like to see?”) | Stub — does not call a model |
-| Settings | Placeholder page |
+| Settings | Profile, Audience, Team invite, and Integrations UI are built |
 | Book a call / setup call | Opens `https://cal.com`, not the live Naano scheduler URL |
-| Integrations | Menu item labeled out of scope |
+| Integrations MCP server | UI + copyable URL only — no real MCP server |
+| Pixel Naano install | Shown as “Not installed”; no script injected |
+| Team invites | Stored in DB; no real email send |
 | EN/FR language toggle | Not built (English only) |
-| Multi-brand workspace switcher | Workspace name is a label only |
+| Multi-brand workspace switcher | Real create + switch; new workspace runs onboarding |
 | Notifications bell | Empty stub menu |
 
 ## Assumptions

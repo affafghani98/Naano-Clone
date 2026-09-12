@@ -10,6 +10,10 @@ import {
 import { db } from "@/lib/db";
 import { setSession } from "@/lib/session";
 
+function industryFromWebsite(websiteUrl: string) {
+  return websiteUrl.toLowerCase().includes("relayed") ? "SaaS" : "B2B";
+}
+
 export async function analyzeWebsite(
   formData: FormData,
 ): Promise<{ profile?: BrandProfile; error?: string }> {
@@ -49,6 +53,8 @@ export async function completeOnboarding(formData: FormData) {
         name: profile.companyName,
         websiteUrl,
         valueProposition,
+        industry: industryFromWebsite(websiteUrl),
+        companySize: "11-50",
         onboardingComplete: true,
       },
     });

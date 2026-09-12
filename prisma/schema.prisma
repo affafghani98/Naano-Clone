@@ -21,10 +21,15 @@ model Workspace {
   name               String
   websiteUrl         String?
   valueProposition   String?
+  industry           String?
+  companySize        String?
+  targetIndustries   String?
+  targetRegions      String?
   onboardingComplete Boolean           @default(false)
   walletBalanceCents Int               @default(0)
   createdAt          DateTime          @default(now())
   members            WorkspaceMember[]
+  invites            WorkspaceInvite[]
   icps               Icp[]
   campaigns          Campaign[]
   shortlist          ShortlistItem[]
@@ -44,6 +49,20 @@ model WorkspaceMember {
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@unique([userId, workspaceId])
+}
+
+model WorkspaceInvite {
+  id              String    @id @default(cuid())
+  workspaceId     String
+  email           String
+  role            String    @default("admin")
+  status          String    @default("pending")
+  invitedByUserId String
+  expiresAt       DateTime
+  createdAt       DateTime  @default(now())
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, email])
 }
 
 model Icp {

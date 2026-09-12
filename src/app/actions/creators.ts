@@ -20,17 +20,27 @@ export async function toggleShortlist(creatorId: string) {
     await db.shortlistItem.create({ data: key });
   }
 
+  revalidatePath("/brand");
   revalidatePath("/brand/creators");
 }
 
 export async function shortlistMany(creatorIds: string[]) {
   const current = await requireUser();
-  await db.shortlistItem.createMany({
-    data: creatorIds.map((creatorId) => ({
-      workspaceId: current.workspace.id,
-      creatorId,
-    })),
-    skipDuplicates: true,
-  });
+  for (const creatorId of creatorIds) {
+    await db.shortlistItem.upsert({
+      where: {
+        workspaceId_creatorId: {
+          workspaceId: current.workspace.id,
+          creatorId,
+        },
+      },
+      create: {
+        workspaceId: current.workspace.id,
+        creatorId,
+      },
+      update: {},
+    });
+  }
+  revalidatePath("/brand");
   revalidatePath("/brand/creators");
 }

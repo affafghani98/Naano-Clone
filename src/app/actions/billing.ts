@@ -46,5 +46,6 @@ export async function addBudget(
 
   revalidatePath("/brand");
   revalidatePath("/brand/billing");
+  revalidatePath("/brand/collaborations");
   return {};
 }

@@ -24,8 +24,8 @@ export default async function LoginPage({
             Enter your email and we&apos;ll send a one-time login code. No password.
           </p>
           <p className="mt-2 text-xs text-neutral-500">
-            One email can hold both brand and creator roles. If both exist,
-            you&apos;ll pick after verifying.
+            Each email is linked to one account type, brand or creator. Use a
+            different email if you need the other role.
           </p>
         </div>
 

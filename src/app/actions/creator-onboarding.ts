@@ -5,7 +5,7 @@ import { getCurrentCreator } from "@/lib/auth";
 import {
   CREATOR_COUNTRIES,
   CREATOR_INDUSTRIES,
-  profileFromLinkedInUrl,
+  generateCreatorProfile,
   suggestedPostPriceCents,
 } from "@/lib/creator-profile";
 import { db } from "@/lib/db";
@@ -21,7 +21,9 @@ export type CreatorOnboardingState = {
     followers: number;
     photoUrl: string;
     linkedInUrl: string;
+    industries: string[];
     suggestedPriceCents: number;
+    usedFallback?: boolean;
   };
 };
 
@@ -37,13 +39,23 @@ export async function importLinkedInProfile(
 
   try {
     const linkedInUrl = String(formData.get("linkedInUrl") ?? "");
-    const profile = profileFromLinkedInUrl(linkedInUrl, current.user.name);
-    return {
-      profile: {
-        ...profile,
-        suggestedPriceCents: suggestedPostPriceCents(profile.followers),
-      },
-    };
+    const bio = String(formData.get("bio") ?? "");
+    if (!linkedInUrl.trim()) {
+      return { error: "Paste your public LinkedIn profile URL." };
+    }
+    if (!bio.trim()) {
+      return {
+        error: "Add your LinkedIn headline or a short bio so we can draft your card.",
+      };
+    }
+
+    const profile = await generateCreatorProfile({
+      linkedInUrl,
+      fallbackName: current.user.name,
+      bio,
+    });
+
+    return { profile };
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "Could not import that profile.",

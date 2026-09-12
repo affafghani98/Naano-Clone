@@ -12,12 +12,5 @@ export default async function CreatorLayout({
     redirect("/onboarding");
   }
 
-  return (
-    <CreatorShell
-      userName={current.user.name}
-      canSwitchToBrand={current.user.memberships.length > 0}
-    >
-      {children}
-    </CreatorShell>
-  );
+  return <CreatorShell userName={current.user.name}>{children}</CreatorShell>;
 }

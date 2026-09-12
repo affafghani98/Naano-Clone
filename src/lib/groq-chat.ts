@@ -1,5 +1,4 @@
-/** Groq retired llama-3.3-70b-versatile (Aug 2026); use their recommended replacement. */
-const DEFAULT_MODEL = "openai/gpt-oss-120b";
+import { getGroqConfig } from "./groq";
 
 const SYSTEM_PROMPT = `You are Naano's in-app assistant for a B2B LinkedIn creator marketplace.
 Answer in one short line whenever possible. No fluff, no lists unless asked.
@@ -27,7 +26,7 @@ export async function askNaanoChat(
     return { ok: false, error: "Keep questions under 1,000 characters." };
   }
 
-  const apiKey = process.env.GROQ_API_KEY?.trim();
+  const { apiKey, model } = getGroqConfig();
   if (!apiKey) {
     return {
       ok: false,
@@ -35,7 +34,6 @@ export async function askNaanoChat(
     };
   }
 
-  const model = process.env.GROQ_MODEL?.trim() || DEFAULT_MODEL;
   const recent = history.slice(-8).map((message) => ({
     role: message.role,
     content: message.content.slice(0, 1000),

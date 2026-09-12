@@ -1,21 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import {
-  addBrandWorkspaceToAccount,
-  logout,
-  switchAccountRole,
-} from "../actions/auth";
+import { logout } from "../actions/auth";
 
 type Props = {
   userName: string;
-  canSwitchToBrand?: boolean;
 };
 
-export function CreatorTopBar({
-  userName,
-  canSwitchToBrand = false,
-}: Props) {
+export function CreatorTopBar({ userName }: Props) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -32,26 +24,6 @@ export function CreatorTopBar({
         {open ? (
           <div className="absolute right-0 z-20 mt-2 w-56 rounded-2xl border border-neutral-200 bg-white p-2 text-sm shadow-sm">
             <p className="px-2 py-1 text-xs text-neutral-500">{userName}</p>
-            {canSwitchToBrand ? (
-              <form action={switchAccountRole}>
-                <input type="hidden" name="role" value="brand" />
-                <button
-                  type="submit"
-                  className="w-full rounded-lg px-2 py-1.5 text-left hover:bg-neutral-50"
-                >
-                  Switch to brand
-                </button>
-              </form>
-            ) : (
-              <form action={addBrandWorkspaceToAccount}>
-                <button
-                  type="submit"
-                  className="w-full rounded-lg px-2 py-1.5 text-left hover:bg-neutral-50"
-                >
-                  Add brand workspace
-                </button>
-              </form>
-            )}
             <form action={logout}>
               <button
                 type="submit"

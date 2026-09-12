@@ -3,15 +3,20 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import {
+  generateBrandProfile,
   normalizeWebsiteUrl,
-  profileFromWebsite,
+  parseBrandProfileJson,
   type BrandProfile,
 } from "@/lib/brand-profile";
 import { db } from "@/lib/db";
 import { setSession } from "@/lib/session";
 
-function industryFromWebsite(websiteUrl: string) {
-  return websiteUrl.toLowerCase().includes("relayed") ? "SaaS" : "B2B";
+function industryFromProfile(profile: BrandProfile, websiteUrl: string) {
+  const haystack = `${profile.companyName} ${profile.valueProposition} ${websiteUrl}`.toLowerCase();
+  if (haystack.includes("saas") || haystack.includes("relayed")) {
+    return "SaaS";
+  }
+  return "B2B";
 }
 
 export async function analyzeWebsite(
@@ -24,7 +29,12 @@ export async function analyzeWebsite(
 
   try {
     const websiteUrl = normalizeWebsiteUrl(String(formData.get("websiteUrl") ?? ""));
-    return { profile: profileFromWebsite(websiteUrl) };
+    const companyDescription = String(formData.get("companyDescription") ?? "").trim();
+    const profile = await generateBrandProfile({
+      websiteUrl,
+      companyDescription,
+    });
+    return { profile };
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "Could not analyze that URL.",
@@ -39,10 +49,15 @@ export async function completeOnboarding(formData: FormData) {
   }
 
   const websiteUrl = normalizeWebsiteUrl(String(formData.get("websiteUrl") ?? ""));
-  const profile = profileFromWebsite(websiteUrl);
+  const profileJson = String(formData.get("profileJson") ?? "");
+  const parsed = parseBrandProfileJson(profileJson);
+  if (!parsed) {
+    redirect("/onboarding-brand");
+  }
+
   const valueProposition =
     String(formData.get("valueProposition") ?? "").trim() ||
-    profile.valueProposition;
+    parsed.valueProposition;
 
   await db.$transaction(async (tx) => {
     await tx.icp.deleteMany({ where: { workspaceId: current.workspace.id } });
@@ -50,16 +65,16 @@ export async function completeOnboarding(formData: FormData) {
     await tx.workspace.update({
       where: { id: current.workspace.id },
       data: {
-        name: profile.companyName,
+        name: parsed.companyName,
         websiteUrl,
         valueProposition,
-        industry: industryFromWebsite(websiteUrl),
+        industry: industryFromProfile(parsed, websiteUrl),
         companySize: "11-50",
         onboardingComplete: true,
       },
     });
     await tx.icp.createMany({
-      data: profile.icps.map((icp, index) => ({
+      data: parsed.icps.map((icp, index) => ({
         workspaceId: current.workspace.id,
         title: icp.title,
         description: icp.description,
@@ -69,11 +84,11 @@ export async function completeOnboarding(formData: FormData) {
     await tx.campaign.create({
       data: {
         workspaceId: current.workspace.id,
-        title: profile.briefTitle,
-        description: profile.briefDescription,
+        title: parsed.briefTitle,
+        description: parsed.briefDescription,
         status: "active",
-        productSummary: profile.productSummary,
-        audienceSummary: profile.audienceSummary,
+        productSummary: parsed.productSummary,
+        audienceSummary: parsed.audienceSummary,
       },
     });
   });

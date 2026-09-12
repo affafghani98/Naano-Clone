@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { logout, switchAccountRole, addCreatorProfileToAccount } from "../actions/auth";
+import { logout } from "../actions/auth";
 import { formatEuro } from "@/lib/money";
 
 const CHECKLIST = [
@@ -14,14 +14,9 @@ const CHECKLIST = [
 type Props = {
   userName: string;
   walletBalanceCents: number;
-  canSwitchToCreator?: boolean;
 };
 
-export function BrandTopBar({
-  userName,
-  walletBalanceCents,
-  canSwitchToCreator = false,
-}: Props) {
+export function BrandTopBar({ userName, walletBalanceCents }: Props) {
   const [open, setOpen] = useState<"started" | "bell" | "profile" | null>(null);
 
   function toggle(next: typeof open) {
@@ -95,26 +90,6 @@ export function BrandTopBar({
         {open === "profile" ? (
           <div className="absolute right-0 z-20 mt-2 w-56 rounded-2xl border border-neutral-200 bg-white p-2 text-sm shadow-sm">
             <p className="px-2 py-1 text-xs text-neutral-500">{userName}</p>
-            {canSwitchToCreator ? (
-              <form action={switchAccountRole}>
-                <input type="hidden" name="role" value="creator" />
-                <button
-                  type="submit"
-                  className="w-full rounded-lg px-2 py-1.5 text-left hover:bg-neutral-50"
-                >
-                  Switch to creator
-                </button>
-              </form>
-            ) : (
-              <form action={addCreatorProfileToAccount}>
-                <button
-                  type="submit"
-                  className="w-full rounded-lg px-2 py-1.5 text-left hover:bg-neutral-50"
-                >
-                  Add creator profile
-                </button>
-              </form>
-            )}
             <Link
               href="/brand/creators"
               className="block rounded-lg px-2 py-1.5 hover:bg-neutral-50"

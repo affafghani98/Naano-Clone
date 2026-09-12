@@ -11,11 +11,12 @@ const ANALYSIS_STEPS = [
   "Preparing brand profile",
 ];
 
-const STAGE_MS = 4000;
+const STAGE_MS = 1400;
 
 export function OnboardingWizard() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [websiteUrl, setWebsiteUrl] = useState("");
+  const [companyDescription, setCompanyDescription] = useState("");
   const [analysisIndex, setAnalysisIndex] = useState(-1);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +26,9 @@ export function OnboardingWizard() {
   async function runAnalysis(formData: FormData) {
     setError(null);
     const url = String(formData.get("websiteUrl") ?? "");
+    const description = String(formData.get("companyDescription") ?? "");
     setWebsiteUrl(url);
+    setCompanyDescription(description);
     setAnalyzing(true);
     setAnalysisIndex(0);
 
@@ -37,18 +40,13 @@ export function OnboardingWizard() {
       }
     }, STAGE_MS);
 
-    const startedAt = Date.now();
     try {
       const result = await analyzeWebsite(formData);
       if (result.error || !result.profile) {
         setError(result.error ?? "Could not analyze that URL.");
         return;
       }
-      const remaining = Math.max(
-        0,
-        ANALYSIS_STEPS.length * STAGE_MS - (Date.now() - startedAt),
-      );
-      await new Promise((resolve) => window.setTimeout(resolve, remaining));
+      setAnalysisIndex(ANALYSIS_STEPS.length - 1);
       setProfile(result.profile);
       setValueProposition(result.profile.valueProposition);
       setStep(2);
@@ -68,9 +66,12 @@ export function OnboardingWizard() {
       {step === 1 ? (
         <form action={runAnalysis} className="space-y-5">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Your company website</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">
+              Your company website
+            </h1>
             <p className="mt-2 text-neutral-600">
-              We read the site and draft a brand profile. This is mocked — no live crawl.
+              We draft a brand profile from your URL and description — no live site
+              crawl.
             </p>
           </div>
           <label className="block space-y-1 text-sm">
@@ -78,7 +79,16 @@ export function OnboardingWizard() {
             <input
               name="websiteUrl"
               required
-              placeholder="https://www.relayed.example"
+              placeholder="https://www.yourcompany.com"
+              className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2"
+            />
+          </label>
+          <label className="block space-y-1 text-sm">
+            <span>Briefly describe what your company does</span>
+            <textarea
+              name="companyDescription"
+              rows={3}
+              placeholder="e.g. We help B2B SaaS teams turn customer calls into a shared product record."
               className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2"
             />
           </label>
@@ -87,9 +97,12 @@ export function OnboardingWizard() {
               {ANALYSIS_STEPS.map((label, index) => (
                 <li
                   key={label}
-                  className={index <= analysisIndex ? "text-neutral-950" : "text-neutral-400"}
+                  className={
+                    index <= analysisIndex ? "text-neutral-950" : "text-neutral-400"
+                  }
                 >
-                  {index < analysisIndex ? "✓" : index === analysisIndex ? "…" : "○"} {label}
+                  {index < analysisIndex ? "✓" : index === analysisIndex ? "…" : "○"}{" "}
+                  {label}
                 </li>
               ))}
             </ol>
@@ -112,6 +125,11 @@ export function OnboardingWizard() {
             <p className="mt-2 text-neutral-600">
               Edit the value proposition, then continue to matching.
             </p>
+            {profile.usedFallback ? (
+              <p className="mt-2 text-xs text-amber-700">
+                AI draft unavailable — showing a generic starter profile you can edit.
+              </p>
+            ) : null}
           </div>
           <label className="block space-y-1 text-sm">
             <span>Value proposition</span>
@@ -161,7 +179,15 @@ export function OnboardingWizard() {
         <form action={completeOnboarding} className="space-y-5">
           <input type="hidden" name="websiteUrl" value={websiteUrl} />
           <input type="hidden" name="valueProposition" value={valueProposition} />
-          <h1 className="text-3xl font-semibold tracking-tight">Your marketplace is ready</h1>
+          <input
+            type="hidden"
+            name="profileJson"
+            value={JSON.stringify({ ...profile, valueProposition })}
+          />
+          <input type="hidden" name="companyDescription" value={companyDescription} />
+          <h1 className="text-3xl font-semibold tracking-tight">
+            Your marketplace is ready
+          </h1>
           <p className="text-neutral-600">
             We prepared a starter brief for {profile.companyName}. Next stop is the
             brand dashboard — creator matching lives there.

@@ -212,11 +212,17 @@ export async function requestLoginCode(
     return { error: "No account with that email. Sign up first." };
   }
 
-  if (intent === "signup_brand" && existing?.memberships.length) {
-    // Already a brand — send a login code instead of erroring hard.
+  if (intent === "signup_brand" && existing?.creatorProfile) {
+    return {
+      error:
+        "That email is already a creator account. Use a different email for a brand workspace.",
+    };
   }
-  if (intent === "signup_creator" && existing?.creatorProfile) {
-    // Already a creator — code will log them in.
+  if (intent === "signup_creator" && existing?.memberships.length) {
+    return {
+      error:
+        "That email is already a brand account. Use a different email for a creator profile.",
+    };
   }
 
   const code = generateLoginCode();
@@ -312,7 +318,13 @@ export async function verifyLoginCode(
     });
   }
 
-  if (intent === "signup_brand" || (intent === "login" && !user.creatorProfile)) {
+  if (intent === "signup_brand") {
+    if (user.creatorProfile) {
+      return {
+        error:
+          "That email is already a creator account. Use a different email for a brand workspace.",
+      };
+    }
     if (user.memberships.length === 0) {
       const workspace = await createBrandWorkspace(user.id, user.name);
       await setSession({
@@ -326,6 +338,12 @@ export async function verifyLoginCode(
   }
 
   if (intent === "signup_creator") {
+    if (user.memberships.length > 0) {
+      return {
+        error:
+          "That email is already a brand account. Use a different email for a creator profile.",
+      };
+    }
     if (!user.creatorProfile) {
       const profile = await createCreatorForUser(user.id, user.name);
       await setSession({
@@ -336,6 +354,18 @@ export async function verifyLoginCode(
       });
       redirect("/onboarding");
     }
+  }
+
+  // Incomplete brand signup resumed via login (no creator side attached).
+  if (intent === "login" && !user.creatorProfile && user.memberships.length === 0) {
+    const workspace = await createBrandWorkspace(user.id, user.name);
+    await setSession({
+      userId: user.id,
+      accountType: "brand",
+      workspaceId: workspace.id,
+      onboardingComplete: false,
+    });
+    redirect("/onboarding-brand");
   }
 
   // Existing account login (or signup when role already present).
@@ -436,71 +466,13 @@ export async function switchAccountRole(formData: FormData) {
   await chooseAccountRole(formData);
 }
 
+/** Dual-role accounts are no longer created; keep stubs so old UI links fail closed. */
 export async function addCreatorProfileToAccount() {
-  const session = await getSession();
-  if (!session || session.accountType !== "brand") {
-    redirect("/login");
-  }
-
-  const user = await db.user.findUnique({
-    where: { id: session.userId },
-    include: { creatorProfile: true },
-  });
-  if (!user) {
-    redirect("/login");
-  }
-  if (user.creatorProfile) {
-    await setSession({
-      userId: user.id,
-      accountType: "creator",
-      creatorId: user.creatorProfile.creatorId,
-      onboardingComplete: user.creatorProfile.onboardingComplete,
-    });
-    redirect(creatorLanding(user.creatorProfile.onboardingComplete));
-  }
-
-  const profile = await createCreatorForUser(user.id, user.name);
-  await setSession({
-    userId: user.id,
-    accountType: "creator",
-    creatorId: profile.creatorId,
-    onboardingComplete: false,
-  });
-  redirect("/onboarding");
+  redirect("/brand");
 }
 
 export async function addBrandWorkspaceToAccount() {
-  const session = await getSession();
-  if (!session || session.accountType !== "creator") {
-    redirect("/login");
-  }
-
-  const user = await db.user.findUnique({
-    where: { id: session.userId },
-    include: { memberships: { include: { workspace: true } } },
-  });
-  if (!user) {
-    redirect("/login");
-  }
-  if (user.memberships[0]) {
-    const membership = user.memberships[0];
-    await setSession({
-      userId: user.id,
-      accountType: "brand",
-      workspaceId: membership.workspaceId,
-      onboardingComplete: membership.workspace.onboardingComplete,
-    });
-    redirect(brandLanding(membership.workspace.onboardingComplete));
-  }
-
-  const workspace = await createBrandWorkspace(user.id, user.name);
-  await setSession({
-    userId: user.id,
-    accountType: "brand",
-    workspaceId: workspace.id,
-    onboardingComplete: false,
-  });
-  redirect("/onboarding-brand");
+  redirect("/creator");
 }
 
 export async function logout() {

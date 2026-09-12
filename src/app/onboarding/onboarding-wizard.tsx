@@ -20,7 +20,9 @@ type Imported = {
   followers: number;
   photoUrl: string;
   linkedInUrl: string;
+  industries: string[];
   suggestedPriceCents: number;
+  usedFallback?: boolean;
 };
 
 export function CreatorOnboardingWizard({
@@ -32,6 +34,7 @@ export function CreatorOnboardingWizard({
 }) {
   const [step, setStep] = useState<2 | 3 | 4 | 5 | 6>(2);
   const [linkedInUrl, setLinkedInUrl] = useState("");
+  const [bio, setBio] = useState("");
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [imported, setImported] = useState<Imported | null>(null);
@@ -52,6 +55,7 @@ export function CreatorOnboardingWizard({
       setImported(result.profile);
       setLinkedInUrl(result.profile.linkedInUrl);
       setCountry(result.profile.country);
+      setIndustries(result.profile.industries.slice(0, 3));
       setPostCostCents(result.profile.suggestedPriceCents);
       setStep(3);
     } catch (err) {
@@ -91,8 +95,8 @@ export function CreatorOnboardingWizard({
               Add your public LinkedIn profile
             </h1>
             <p className="mt-2 text-neutral-600">
-              Paste a public LinkedIn URL. We only mock-import name, photo, headline,
-              country, and follower count — no posts, engagement, or private analytics.
+              We can&apos;t scrape LinkedIn — paste your URL plus headline/bio and
+              we&apos;ll draft your creator card.
             </p>
           </div>
           <label className="block space-y-1 text-sm">
@@ -106,6 +110,21 @@ export function CreatorOnboardingWizard({
               className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2"
             />
           </label>
+          <label className="block space-y-1 text-sm">
+            <span>Paste your LinkedIn headline or a short bio</span>
+            <textarea
+              name="bio"
+              required
+              rows={3}
+              value={bio}
+              onChange={(event) => setBio(event.target.value)}
+              placeholder="e.g. B2B marketer writing about AI tooling for growth teams. 18k followers."
+              className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2"
+            />
+          </label>
+          {importing ? (
+            <p className="text-sm text-neutral-600">Drafting your creator card…</p>
+          ) : null}
           {error ? <p className="text-sm text-red-700">{error}</p> : null}
           <button
             type="submit"
@@ -126,6 +145,11 @@ export function CreatorOnboardingWizard({
             <p className="mt-2 text-neutral-600">
               Confirm the imported details and pick up to 3 industries.
             </p>
+            {imported.usedFallback ? (
+              <p className="mt-2 text-xs text-amber-700">
+                AI draft unavailable — showing a generic starter card you can edit.
+              </p>
+            ) : null}
           </div>
           <div className="rounded-2xl border border-neutral-200 bg-white p-4 text-sm">
             <p>

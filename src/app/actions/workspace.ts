@@ -119,7 +119,16 @@ export async function inviteColleague(
     }
   }
 
-  const existingUser = await db.user.findUnique({ where: { email } });
+  const existingUser = await db.user.findUnique({
+    where: { email },
+    include: { creatorProfile: true },
+  });
+  if (existingUser?.creatorProfile) {
+    return {
+      error:
+        "That email is already a creator account. Invite a different work email.",
+    };
+  }
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 14);
 

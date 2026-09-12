@@ -24,7 +24,6 @@ export default async function BrandLayout({
       currentWorkspaceId={current.workspace.id}
       workspaces={workspaces}
       walletBalanceCents={current.workspace.walletBalanceCents}
-      canSwitchToCreator={Boolean(current.user.creatorProfile)}
     >
       {children}
     </BrandShell>

@@ -23,9 +23,17 @@ npm run db:reset
 
 Demo login (after seed): `demo@naano.clone` / `demo1234`
 
+```bash
+npm run dev
+```
+
+Open http://localhost:3000 — marketing landing (logged out). Log in with the demo account to skip onboarding and land on `/brand`. New brand signup goes `/signup` → `/register?role=saas` → `/onboarding-brand`.
+
+Website analysis is mocked (~16s progress, no live crawl).
+
 ## Assumptions
 
 - After Book / Add and continue: confirmation toast, then Collaborations. Not confirmed on the live site.
-- Onboarding step 3 goes to the brand Overview.
+- Onboarding step 3 was not captured on the live site. This rebuild shows a short “marketplace is ready” screen, then Overview.
 - AI website analysis, payments, and Pixel Naano are mocked.
 - Integrations / MCP are out of scope.

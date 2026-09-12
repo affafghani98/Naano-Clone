@@ -20,8 +20,8 @@ export default async function BillingPage() {
       <div>
         <h1 className="text-3xl font-semibold tracking-tight">Billing</h1>
         <p className="mt-2 text-neutral-600">
-          Wallet credits, not per-transaction checkout. Bookings will deduct from
-          this balance later.
+          Wallet credits, not per-transaction checkout. Bookings and offers
+          deduct from this balance and cannot take it below zero.
         </p>
       </div>
 

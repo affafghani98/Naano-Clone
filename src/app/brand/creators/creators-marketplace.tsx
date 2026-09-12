@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { shortlistMany, toggleShortlist } from "../../actions/creators";
+import type { BookingFormat } from "@/lib/booking";
 import {
   matchesPrice,
   PRICE_FILTERS,
@@ -10,6 +11,11 @@ import {
 } from "@/lib/creators";
 import { CreatorCard } from "./creator-card";
 import { CreatorProfileModal } from "./creator-profile-modal";
+import { MakeOfferModal } from "./make-offer-modal";
+import { YourSelectionModal } from "./your-selection-modal";
+
+type BookingStage = "selection" | "offer";
+type CampaignOption = { id: string; title: string };
 
 type View = "matching" | "marketplace";
 type ListTab = "all" | "shortlist";
@@ -18,9 +24,13 @@ type SortId = "match" | "price-asc" | "price-desc" | "followers" | "views";
 export function CreatorsMarketplace({
   workspaceName,
   creators: initialCreators,
+  campaigns,
+  walletBalanceCents,
 }: {
   workspaceName: string;
   creators: MarketplaceCreator[];
+  campaigns: CampaignOption[];
+  walletBalanceCents: number;
 }) {
   const [creators, setCreators] = useState(initialCreators);
   const [view, setView] = useState<View>("matching");
@@ -32,6 +42,11 @@ export function CreatorsMarketplace({
   const [price, setPrice] = useState<PriceFilterId>("any");
   const [selected, setSelected] = useState<string[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [booking, setBooking] = useState<{
+    creatorId: string;
+    format: BookingFormat;
+    stage: BookingStage;
+  } | null>(null);
   const [, startTransition] = useTransition();
 
   useEffect(() => {
@@ -98,6 +113,12 @@ export function CreatorsMarketplace({
   }, [country, creators, industry, listTab, price, query, sort]);
 
   const openCreator = creators.find((creator) => creator.id === openId) ?? null;
+  const bookingCreator =
+    creators.find((creator) => creator.id === booking?.creatorId) ?? null;
+
+  function startBooking(creatorId: string, format: BookingFormat) {
+    setBooking({ creatorId, format, stage: "selection" });
+  }
 
   function flipShortlist(creatorId: string) {
     setCreators((current) =>
@@ -278,7 +299,7 @@ export function CreatorsMarketplace({
               selected={selected.includes(creator.id)}
               emphasizeMatch={view === "matching"}
               onOpen={() => setOpenId(creator.id)}
-              onBook={() => setOpenId(creator.id)}
+              onBook={() => startBooking(creator.id, "single_post")}
               onToggleSelect={() => toggleSelect(creator.id)}
               onToggleShortlist={() => flipShortlist(creator.id)}
             />
@@ -291,6 +312,29 @@ export function CreatorsMarketplace({
           creator={openCreator}
           onClose={() => setOpenId(null)}
           onToggleShortlist={flipShortlist}
+          onCollaborate={(format) => startBooking(openCreator.id, format)}
+        />
+      ) : null}
+
+      {booking && bookingCreator && booking.stage === "selection" ? (
+        <YourSelectionModal
+          creator={bookingCreator}
+          format={booking.format}
+          walletBalanceCents={walletBalanceCents}
+          onClose={() => setBooking(null)}
+          onNegotiate={() =>
+            setBooking({ ...booking, stage: "offer" })
+          }
+        />
+      ) : null}
+
+      {booking && bookingCreator && booking.stage === "offer" ? (
+        <MakeOfferModal
+          creator={bookingCreator}
+          format={booking.format}
+          campaigns={campaigns}
+          walletBalanceCents={walletBalanceCents}
+          onClose={() => setBooking({ ...booking, stage: "selection" })}
         />
       ) : null}
     </section>

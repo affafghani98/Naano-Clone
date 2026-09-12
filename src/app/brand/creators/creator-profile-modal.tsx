@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { formatEuro } from "@/lib/money";
+import type { BookingFormat } from "@/lib/booking";
 import {
   formatCompact,
   tagLine,
   type MarketplaceCreator,
 } from "@/lib/creators";
+import { formatEuro } from "@/lib/money";
 import { AudienceBars } from "./audience-bars";
 import { ReachChart } from "./reach-chart";
 
@@ -16,10 +17,12 @@ export function CreatorProfileModal({
   creator,
   onClose,
   onToggleShortlist,
+  onCollaborate,
 }: {
   creator: MarketplaceCreator;
   onClose: () => void;
   onToggleShortlist: (creatorId: string) => void;
+  onCollaborate: (format: BookingFormat) => void;
 }) {
   const [tab, setTab] = useState<Tab>("overview");
   const [format, setFormat] = useState<"single" | "bundle">("single");
@@ -229,6 +232,9 @@ export function CreatorProfileModal({
           ) : null}
           <button
             type="button"
+            onClick={() =>
+              onCollaborate(format === "bundle" ? "bundle_5" : "single_post")
+            }
             className="mt-5 w-full rounded-full bg-neutral-950 px-4 py-2.5 text-sm font-medium text-white"
           >
             Collaborate with {creator.name.split(" ")[0]} · {formatEuro(price)}

@@ -16,10 +16,18 @@ export default async function CreatorsPage() {
     orderBy: { matchPercent: "desc" },
   });
 
+  const campaigns = await db.campaign.findMany({
+    where: { workspaceId: current.workspace.id },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, title: true },
+  });
+
   return (
     <CreatorsMarketplace
       workspaceName={current.workspace.name}
       creators={rows.map(toMarketplaceCreator)}
+      campaigns={campaigns}
+      walletBalanceCents={current.workspace.walletBalanceCents}
     />
   );
 }

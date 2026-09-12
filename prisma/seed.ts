@@ -644,7 +644,7 @@ async function seedDemoBrand() {
       messages: {
         create: {
           sender: "system",
-          body: "Invite a creator — the thread opens as soon as the first booking is accepted.",
+          body: "Invite a creator — in this demo the thread opens as soon as the first booking is sent.",
         },
       },
     },

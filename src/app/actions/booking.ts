@@ -55,5 +55,7 @@ export async function createBooking(
   revalidatePath("/brand/billing");
   revalidatePath("/brand/collaborations");
   revalidatePath("/brand/creators");
+  revalidatePath("/brand/messages");
+  revalidatePath("/brand/results");
   return { ok: true, kind: input.mode };
 }

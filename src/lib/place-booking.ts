@@ -135,6 +135,25 @@ export async function placeBooking(
     },
   });
 
+  await tx.messageThread.create({
+    data: {
+      workspaceId: input.workspaceId,
+      creatorId: creator.id,
+      collaborationId: collaboration.id,
+      isSystem: false,
+      title: creator.name,
+      messages: {
+        create: {
+          sender: "system",
+          body:
+            input.mode === "offer"
+              ? `Offer sent to ${creator.name} for ${formatLabel(input.format)}. Waiting for them to accept or decline within 48 hours.`
+              : `Booking sent to ${creator.name} for ${formatLabel(input.format)}. Waiting for them to accept or decline within 48 hours.`,
+        },
+      },
+    },
+  });
+
   return {
     ok: true,
     collaborationId: collaboration.id,

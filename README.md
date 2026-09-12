@@ -28,6 +28,33 @@ Skips onboarding and lands on `/brand` (workspace **Relayed**, empty wallet, 12 
 
 **New brand signup:** `/signup` → `/register?role=saas` → `/onboarding-brand` → `/brand`
 
+## Database (SQLite ↔ Postgres)
+
+Connection is always via `DATABASE_URL` in `.env` (see `.env.example`). The Prisma schema and app code are written to stay swappable:
+
+- No raw SQL (`$queryRaw` / `$executeRaw`)
+- No provider-specific `@db.*` column types
+- Lists/JSON stored as `String` and parsed in app code
+- Booleans, `DateTime`, and `cuid()` ids only
+
+**Local (default):** `provider = "sqlite"` and `DATABASE_URL="file:./dev.db"`.
+
+**Vercel (Neon or Supabase):** SQLite will not persist on the serverless filesystem. Switch before deploy:
+
+1. Create a free Postgres database (Neon or Supabase).
+2. In `prisma/schema.prisma`, set `provider = "postgresql"`.
+3. Set `DATABASE_URL` to the **pooled** connection string in the Vercel project env.
+4. Optionally set `DIRECT_URL` to the **direct** (non-pooled) URL and add `directUrl = env("DIRECT_URL")` under `datasource db` so `prisma migrate` is reliable with poolers.
+5. Set `SESSION_SECRET` to a long random string.
+6. Apply schema on the empty Postgres DB, then seed:
+   ```bash
+   npx prisma db push
+   npm run db:seed
+   ```
+   Existing SQLite migration SQL under `prisma/migrations/` is for local SQLite. For a clean Postgres baseline you can `db push` (demo-friendly) or regenerate migrations after switching the provider. Do not reuse the SQLite migration files as-is against Postgres.
+
+Local SQLite and hosted Postgres can coexist as long as each environment has the matching `provider` + `DATABASE_URL` pair.
+
 ## Scope
 
 - **Brand side only.** Creator signup and creator dashboard are not built.
@@ -35,7 +62,7 @@ Skips onboarding and lands on `/brand` (workspace **Relayed**, empty wallet, 12 
 - **Payments:** fake wallet top-ups and booking debits. No payment processor.
 - **AI:** onboarding website analysis and campaign “Create with AI” are mocked or stubbed. No model calls.
 - **Pixel Naano:** install CTA only. No real tracking script.
-- **Integrations / MCP:** out of scope. Not built.
+- **Integrations / MCP:** Settings UI is present; MCP server and pixel install are not real backends.
 
 ## Cut / stub inventory
 

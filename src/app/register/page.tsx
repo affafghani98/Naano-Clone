@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { redirectIfAuthenticated } from "@/lib/auth";
-import { EmailCodeRequestForm } from "../_components/email-code-request-form";
+import { AuthForm } from "../_components/auth-form";
+import { registerBrand } from "../actions/auth";
 import { CreatorRegisterView } from "./creator-register-view";
 
 export default async function RegisterPage({
@@ -31,14 +32,13 @@ export default async function RegisterPage({
             Create a brand account
           </h1>
           <p className="mt-2 text-sm text-neutral-600">
-            We&apos;ll email a one-time code — no password. Already a creator on
-            this email? Verifying adds a brand workspace.
+            Email and password only. Each email is brand or creator, not both.
           </p>
         </div>
-        <EmailCodeRequestForm
-          intent="signup_brand"
+        <AuthForm
+          action={registerBrand}
+          submitLabel="Continue to onboarding"
           includeName
-          submitLabel="Email me a code"
         />
         <p className="text-sm text-neutral-600">
           Already registered?{" "}

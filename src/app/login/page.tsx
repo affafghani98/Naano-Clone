@@ -1,8 +1,13 @@
 import Link from "next/link";
 import { redirectIfAuthenticated } from "@/lib/auth";
-import { DEMO_CREATOR_EMAIL, DEMO_EMAIL } from "@/lib/demo-account";
-import { EmailCodeRequestForm } from "../_components/email-code-request-form";
-import { loginDemoAccount } from "../actions/auth";
+import {
+  DEMO_CREATOR_EMAIL,
+  DEMO_CREATOR_PASSWORD,
+  DEMO_EMAIL,
+  DEMO_PASSWORD,
+} from "@/lib/demo-account";
+import { AuthForm } from "../_components/auth-form";
+import { login, loginDemoAccount } from "../actions/auth";
 
 export default async function LoginPage({
   searchParams,
@@ -21,7 +26,7 @@ export default async function LoginPage({
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Log in</h1>
           <p className="mt-2 text-sm text-neutral-600">
-            Enter your email and we&apos;ll send a one-time login code. No password.
+            Email and password. No one-time codes.
           </p>
           <p className="mt-2 text-xs text-neutral-500">
             Each email is linked to one account type, brand or creator. Use a
@@ -31,15 +36,16 @@ export default async function LoginPage({
 
         {error === "demo-missing" ? (
           <p className="text-sm text-red-700">
-            Demo accounts missing — run <code className="font-mono">npm run db:seed</code>.
+            Demo accounts missing — run{" "}
+            <code className="font-mono">npm run db:seed</code>.
           </p>
         ) : null}
 
-        <EmailCodeRequestForm intent="login" submitLabel="Email me a code" />
+        <AuthForm action={login} submitLabel="Log in" />
 
         <div className="space-y-3 rounded-2xl border border-neutral-200 bg-white p-4">
           <p className="text-xs uppercase tracking-wide text-neutral-500">
-            Instant demo (skips email code)
+            Instant demo
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
             <form action={loginDemoAccount}>
@@ -62,7 +68,8 @@ export default async function LoginPage({
             </form>
           </div>
           <p className="text-xs text-neutral-500">
-            {DEMO_EMAIL} · {DEMO_CREATOR_EMAIL}
+            {DEMO_EMAIL} / {DEMO_PASSWORD} · {DEMO_CREATOR_EMAIL} /{" "}
+            {DEMO_CREATOR_PASSWORD}
           </p>
         </div>
 

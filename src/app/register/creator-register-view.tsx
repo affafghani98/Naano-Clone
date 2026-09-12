@@ -1,15 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { useActionState } from "react";
-import { requestLoginCode, type AuthState } from "../actions/auth";
+import { useActionState, useState } from "react";
+import { registerCreator, type AuthState } from "../actions/auth";
 import { formatEuro } from "@/lib/money";
 
 export function CreatorRegisterView() {
   const [name, setName] = useState("");
   const [state, formAction, pending] = useActionState(
-    requestLoginCode,
+    registerCreator,
     {} as AuthState,
   );
 
@@ -24,12 +23,10 @@ export function CreatorRegisterView() {
             <h1 className="text-3xl font-semibold tracking-tight">Join Naano</h1>
             <p className="mt-2 text-neutral-600">
               Get paid to create LinkedIn content for B2B brands you actually use.
-              We&apos;ll email a one-time code — no password. Already a brand on
-              this email? Verifying adds a creator profile.
+              Email and password only — each email is creator or brand, not both.
             </p>
           </div>
           <form action={formAction} className="space-y-4">
-            <input type="hidden" name="intent" value="signup_creator" />
             <label className="block space-y-1 text-sm">
               <span>Name</span>
               <input
@@ -49,6 +46,16 @@ export function CreatorRegisterView() {
                 className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2"
               />
             </label>
+            <label className="block space-y-1 text-sm">
+              <span>Password</span>
+              <input
+                name="password"
+                type="password"
+                required
+                minLength={8}
+                className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2"
+              />
+            </label>
             {state.error ? (
               <p className="text-sm text-red-700">{state.error}</p>
             ) : null}
@@ -57,7 +64,7 @@ export function CreatorRegisterView() {
               disabled={pending}
               className="w-full rounded-full bg-neutral-950 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-60"
             >
-              {pending ? "Sending code…" : "Email me a code"}
+              {pending ? "Please wait…" : "Continue"}
             </button>
           </form>
           <p className="text-sm text-neutral-600">

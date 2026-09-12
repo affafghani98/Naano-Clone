@@ -15,8 +15,6 @@ npm run db:seed
 npm run dev
 ```
 
-For real email delivery, set `RESEND_API_KEY` in `.env` (see `.env.example`). Without it, login codes are logged to the terminal as `[naano-auth]`.
-
 Open http://localhost:3000
 
 | Command | What it does |
@@ -26,16 +24,16 @@ Open http://localhost:3000
 
 Re-run seed or reset before recording a walkthrough so wallet, collaborations, and messages start clean.
 
-**Brand demo (after seed):** On `/login`, click **Brand demo** (instant, no email code) → `/brand`  
+**Brand demo (after seed):** On `/login`, click **Brand demo** (instant) or sign in as `demo@naano.clone` / `demo1234` → `/brand`  
 Workspace **Relayed**, empty wallet, 12 creators, starter draft brief, NaanoBot, 0 collaborations. Extra **active** campaigns exist for creator Opportunities.
 
-**Creator demo (after seed):** On `/login`, click **Creator demo** → `/creator`  
+**Creator demo (after seed):** On `/login`, click **Creator demo** or `creator@naano.clone` / `demo1234` → `/creator`  
 Maya Chen profile, open opportunities, NaanoBot.
 
-**New brand signup:** `/signup` → `/register?role=saas` → email + 6-digit code → `/onboarding-brand` → `/brand`  
+**New brand signup:** `/signup` → `/register?role=saas` → email + password → `/onboarding-brand` → `/brand`  
 Starter brief is published as **active**. Seeded Relayed still keeps its original draft brief plus separate active campaigns.
 
-**New creator signup:** `/signup` → `/register?role=influencer` → email + 6-digit code → `/onboarding` → `/creator`
+**New creator signup:** `/signup` → `/register?role=influencer` → email + password → `/onboarding` → `/creator`
 
 **One email, one role:** Brand and creator accounts must use different emails. Signing up as the other role with an existing email is rejected.
 
@@ -57,7 +55,7 @@ Connection is always via `DATABASE_URL` + `DIRECT_URL` in `.env` (see `.env.exam
 | `DATABASE_URL` | App / Prisma Client (runtime) | **Pooled** (`…-pooler…`). Add `sslmode=require&pgbouncer=true&connect_timeout=15` |
 | `DIRECT_URL` | `prisma migrate` | **Direct** (no `-pooler`). Add `sslmode=require` |
 
-**Vercel env:** set `DATABASE_URL`, `DIRECT_URL`, `SESSION_SECRET`, plus Resend/Groq keys as needed. Then apply schema and seed against Neon (from your machine, with those URLs in `.env` or exported):
+**Vercel env:** set `DATABASE_URL`, `DIRECT_URL`, `SESSION_SECRET`, plus `GROQ_API_KEY` as needed. Then apply schema and seed against Neon (from your machine, with those URLs in `.env` or exported):
 
 ```bash
 npx prisma migrate deploy
@@ -71,7 +69,7 @@ Do **not** run the old SQLite `file:./dev.db` URL against this schema — local 
 ## Scope
 
 - **Brand + creator sides.** Creator signup, onboarding, and dashboard are included; payments and OAuth stay mocked.
-- **Auth:** email + one-time 6-digit code via Resend (no passwords, no OAuth). Without `RESEND_API_KEY`, codes are printed in the server terminal. Seeded demos use instant login buttons on `/login`.
+- **Auth:** email + password (bcrypt hashes in the DB). No OAuth, no email OTP. Seeded demos also have instant login buttons on `/login`.
 - **Payments:** fake wallet top-ups and booking debits on the brand side. Creator withdraw / Stripe / bank connect are UI stubs.
 - **AI:** Page chat + brand/creator onboarding drafts use Groq. Campaign “Create with AI” and “Copy for my AI” stay stubbed/copy-only. Without `GROQ_API_KEY`, onboarding falls back to labeled generic profiles.
 - **Pixel Naano:** install CTA only. No real tracking script.
@@ -111,7 +109,7 @@ Do **not** run the old SQLite `file:./dev.db` URL against this schema — local 
 - **Direct Book** books at the listed price and does **not** attach a campaign brief. **Negotiate** can attach a campaign via the Campaign dropdown. Messages campaign filter only shows threads whose booking linked that brief.
 - Creator message threads open at **`invitation_sent`** (when the brand books/offers). Creator **Apply** creates an `invitation_received` collaboration and thread so both sides see it. Brand Accept / Creator Accept move the collab to `active`.
 - One email is either brand or creator (not both). Demo accounts use separate emails.
-- Auth uses email + one-time code (10-minute expiry, hashed at rest). Demo accounts use instant buttons on `/login`.
+- Auth uses email + password (bcrypt). Demo accounts also use instant buttons on `/login`.
 - Results reach/clicks are **mocked**; attribution rows use creators you actually booked.
 - Collaborations has the core table and status tabs. Campaign filter, search, and tab counts were deferred.
 - Website analysis progress is mocked (~16s), not a live crawl.

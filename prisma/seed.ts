@@ -1,8 +1,11 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 import {
   DEMO_CREATOR_EMAIL,
+  DEMO_CREATOR_PASSWORD,
   DEMO_CREATOR_SLUG,
   DEMO_EMAIL,
+  DEMO_PASSWORD,
 } from "../src/lib/demo-account";
 
 const db = new PrismaClient();
@@ -534,7 +537,6 @@ async function reset() {
   await db.workspaceInvite.deleteMany();
   await db.workspaceMember.deleteMany();
   await db.creatorProfile.deleteMany();
-  await db.loginCode.deleteMany();
   await db.workspace.deleteMany();
   await db.user.deleteMany();
   await db.creator.deleteMany();
@@ -584,9 +586,11 @@ async function seedCreators() {
 }
 
 async function seedDemoBrand() {
+  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
   const user = await db.user.create({
     data: {
       email: DEMO_EMAIL,
+      passwordHash,
       name: "Jordan Hale",
     },
   });
@@ -728,9 +732,11 @@ async function seedDemoCreator() {
     },
   });
 
+  const passwordHash = await bcrypt.hash(DEMO_CREATOR_PASSWORD, 10);
   const user = await db.user.create({
     data: {
       email: DEMO_CREATOR_EMAIL,
+      passwordHash,
       name: maya.name,
       creatorProfile: {
         create: {
@@ -777,8 +783,8 @@ async function main() {
   console.log(`  users: ${users}`);
   console.log(`  creators: ${creators}`);
   console.log(`  campaigns: ${campaigns} (${activeCampaigns} active)`);
-  console.log(`  brand demo: ${DEMO_EMAIL} (instant login button)`);
-  console.log(`  creator demo: ${DEMO_CREATOR_EMAIL} (instant login button)`);
+  console.log(`  brand demo: ${DEMO_EMAIL} / ${DEMO_PASSWORD}`);
+  console.log(`  creator demo: ${DEMO_CREATOR_EMAIL} / ${DEMO_CREATOR_PASSWORD}`);
 }
 
 main()

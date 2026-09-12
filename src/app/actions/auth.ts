@@ -1,26 +1,16 @@
 "use server";
 
+import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import {
   DEMO_CREATOR_EMAIL,
   DEMO_EMAIL,
 } from "@/lib/demo-account";
 import { db } from "@/lib/db";
-import {
-  codesMatch,
-  generateLoginCode,
-  hashLoginCode,
-  isAuthIntent,
-  loginCodeExpiresAt,
-  type AuthIntent,
-} from "@/lib/login-code";
-import { sendLoginCodeEmail } from "@/lib/mail";
 import { clearSession, getSession, setSession } from "@/lib/session";
 
 export type AuthState = {
   error?: string;
-  ok?: boolean;
-  deliveredVia?: "resend" | "console";
 };
 
 function brandLanding(onboardingComplete: boolean) {
@@ -43,32 +33,117 @@ function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
 }
 
-async function createBrandWorkspace(userId: string, name: string) {
-  return db.workspace.create({
+export async function registerBrand(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const name = String(formData.get("name") ?? "").trim();
+  const email = normalizeEmail(String(formData.get("email") ?? ""));
+  const password = String(formData.get("password") ?? "");
+
+  if (!name || !email || !password) {
+    return { error: "Name, email, and password are required." };
+  }
+  if (!email.includes("@")) {
+    return { error: "Enter a valid email." };
+  }
+  if (password.length < 8) {
+    return { error: "Password must be at least 8 characters." };
+  }
+
+  const existing = await db.user.findUnique({
+    where: { email },
+    include: { memberships: true, creatorProfile: true },
+  });
+  if (existing?.creatorProfile) {
+    return {
+      error:
+        "That email is already a creator account. Use a different email for a brand workspace.",
+    };
+  }
+  if (existing) {
+    return { error: "That email is already registered." };
+  }
+
+  const user = await db.user.create({
     data: {
-      name: `${name}'s workspace`,
-      onboardingComplete: false,
-      walletBalanceCents: 0,
-      members: {
-        create: { userId, role: "owner" },
-      },
-      threads: {
+      name,
+      email,
+      passwordHash: await bcrypt.hash(password, 10),
+      memberships: {
         create: {
-          isSystem: true,
-          title: "NaanoBot",
-          messages: {
+          role: "owner",
+          workspace: {
             create: {
-              sender: "system",
-              body: "Invite a creator — the thread opens as soon as the first booking is accepted.",
+              name: `${name}'s workspace`,
+              onboardingComplete: false,
+              walletBalanceCents: 0,
+              threads: {
+                create: {
+                  isSystem: true,
+                  title: "NaanoBot",
+                  messages: {
+                    create: {
+                      sender: "system",
+                      body: "Invite a creator — the thread opens as soon as the first booking is accepted.",
+                    },
+                  },
+                },
+              },
             },
           },
         },
       },
     },
+    include: { memberships: true },
   });
+
+  const workspaceId = user.memberships[0]?.workspaceId;
+  if (!workspaceId) {
+    return { error: "Could not create a workspace." };
+  }
+
+  await setSession({
+    userId: user.id,
+    accountType: "brand",
+    workspaceId,
+    onboardingComplete: false,
+  });
+  redirect("/onboarding-brand");
 }
 
-async function createCreatorForUser(userId: string, name: string) {
+export async function registerCreator(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const name = String(formData.get("name") ?? "").trim();
+  const email = normalizeEmail(String(formData.get("email") ?? ""));
+  const password = String(formData.get("password") ?? "");
+
+  if (!name || !email || !password) {
+    return { error: "Name, email, and password are required." };
+  }
+  if (!email.includes("@")) {
+    return { error: "Enter a valid email." };
+  }
+  if (password.length < 8) {
+    return { error: "Password must be at least 8 characters." };
+  }
+
+  const existing = await db.user.findUnique({
+    where: { email },
+    include: { memberships: true, creatorProfile: true },
+  });
+  if (existing?.memberships.length) {
+    return {
+      error:
+        "That email is already a brand account. Use a different email for a creator profile.",
+    };
+  }
+  if (existing) {
+    return { error: "That email is already registered." };
+  }
+
   const baseSlug = slugify(name) || "creator";
   let slug = baseSlug;
   let attempt = 0;
@@ -79,44 +154,54 @@ async function createCreatorForUser(userId: string, name: string) {
 
   const referralCode = `ref-${slug}-${Math.random().toString(36).slice(2, 8)}`;
 
-  const creator = await db.creator.create({
+  const user = await db.user.create({
     data: {
-      slug,
       name,
-      photoUrl: `https://i.pravatar.cc/160?u=${slug}`,
-      country: "—",
-      countryCode: "XX",
-      industry: "B2B",
-      tags: "[]",
-      followers: 0,
-      medianViews: 0,
-      cpmCents: 0,
-      postCostCents: 0,
-      bundleCostCents: 0,
-      matchPercent: 50,
-      typicalReach: 0,
-      postsAnalyzed: 0,
-      audienceMatchPercent: 50,
-      jobTitleBreakdown: "[]",
-      seniorityBreakdown: "[]",
-      overview: "Creator profile in progress.",
-      headline: null,
-      linkedInUrl: null,
+      email,
+      passwordHash: await bcrypt.hash(password, 10),
+      creatorProfile: {
+        create: {
+          referralCode,
+          onboardingComplete: false,
+          creator: {
+            create: {
+              slug,
+              name,
+              photoUrl: `https://i.pravatar.cc/160?u=${slug}`,
+              country: "—",
+              countryCode: "XX",
+              industry: "B2B",
+              tags: "[]",
+              followers: 0,
+              medianViews: 0,
+              cpmCents: 0,
+              postCostCents: 0,
+              bundleCostCents: 0,
+              matchPercent: 50,
+              typicalReach: 0,
+              postsAnalyzed: 0,
+              audienceMatchPercent: 50,
+              jobTitleBreakdown: "[]",
+              seniorityBreakdown: "[]",
+              overview: "Creator profile in progress.",
+              headline: null,
+              linkedInUrl: null,
+            },
+          },
+        },
+      },
     },
+    include: { creatorProfile: true },
   });
 
-  const profile = await db.creatorProfile.create({
-    data: {
-      userId,
-      creatorId: creator.id,
-      referralCode,
-      onboardingComplete: false,
-    },
-  });
+  const creatorId = user.creatorProfile?.creatorId;
+  if (!creatorId) {
+    return { error: "Could not create a creator profile." };
+  }
 
   await db.messageThread.create({
     data: {
-      creatorId: creator.id,
+      creatorId,
       isSystem: true,
       title: "NaanoBot",
       messages: {
@@ -128,36 +213,50 @@ async function createCreatorForUser(userId: string, name: string) {
     },
   });
 
-  return profile;
+  await setSession({
+    userId: user.id,
+    accountType: "creator",
+    creatorId,
+    onboardingComplete: false,
+  });
+  redirect("/onboarding");
 }
 
-async function establishSessionForUser(userId: string) {
+export async function login(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const email = normalizeEmail(String(formData.get("email") ?? ""));
+  const password = String(formData.get("password") ?? "");
+
+  if (!email || !password) {
+    return { error: "Email and password are required." };
+  }
+
   const user = await db.user.findUnique({
-    where: { id: userId },
+    where: { email },
     include: {
       memberships: { include: { workspace: true } },
       creatorProfile: true,
     },
   });
-  if (!user) {
-    return { error: "Account not found." } as const;
+
+  if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+    return { error: "Email or password is wrong." };
   }
 
-  const hasBrand = user.memberships.length > 0;
-  const hasCreator = Boolean(user.creatorProfile);
-
-  if (hasBrand && hasCreator && user.creatorProfile) {
-    const membership = user.memberships[0]!;
+  // Prefer creator when both somehow exist (legacy); new signups are single-role.
+  if (user.creatorProfile && user.memberships.length > 0) {
     await setSession({
       userId: user.id,
       accountType: "brand",
-      workspaceId: membership.workspaceId,
-      onboardingComplete: membership.workspace.onboardingComplete,
+      workspaceId: user.memberships[0]!.workspaceId,
+      onboardingComplete: user.memberships[0]!.workspace.onboardingComplete,
     });
     redirect("/choose-role");
   }
 
-  if (hasCreator && user.creatorProfile) {
+  if (user.creatorProfile) {
     await setSession({
       userId: user.id,
       accountType: "creator",
@@ -169,7 +268,7 @@ async function establishSessionForUser(userId: string) {
 
   const membership = user.memberships[0];
   if (!membership) {
-    return { error: "This account has no workspace or creator profile." } as const;
+    return { error: "This account has no workspace." };
   }
 
   await setSession({
@@ -181,205 +280,7 @@ async function establishSessionForUser(userId: string) {
   redirect(brandLanding(membership.workspace.onboardingComplete));
 }
 
-export async function requestLoginCode(
-  _prev: AuthState,
-  formData: FormData,
-): Promise<AuthState> {
-  const email = normalizeEmail(String(formData.get("email") ?? ""));
-  const intentRaw = String(formData.get("intent") ?? "login");
-  const name = String(formData.get("name") ?? "").trim();
-
-  if (!email || !email.includes("@")) {
-    return { error: "Enter a valid email." };
-  }
-  if (!isAuthIntent(intentRaw)) {
-    return { error: "Invalid sign-in intent." };
-  }
-  const intent: AuthIntent = intentRaw;
-
-  if (intent === "signup_brand" || intent === "signup_creator") {
-    if (!name) {
-      return { error: "Name is required to sign up." };
-    }
-  }
-
-  const existing = await db.user.findUnique({
-    where: { email },
-    include: { memberships: true, creatorProfile: true },
-  });
-
-  if (intent === "login" && !existing) {
-    return { error: "No account with that email. Sign up first." };
-  }
-
-  if (intent === "signup_brand" && existing?.creatorProfile) {
-    return {
-      error:
-        "That email is already a creator account. Use a different email for a brand workspace.",
-    };
-  }
-  if (intent === "signup_creator" && existing?.memberships.length) {
-    return {
-      error:
-        "That email is already a brand account. Use a different email for a creator profile.",
-    };
-  }
-
-  const code = generateLoginCode();
-  const codeHash = hashLoginCode(email, code);
-
-  await db.loginCode.deleteMany({ where: { email } });
-  await db.loginCode.create({
-    data: {
-      email,
-      codeHash,
-      intent,
-      name: name || null,
-      expiresAt: loginCodeExpiresAt(),
-    },
-  });
-
-  const delivery = await sendLoginCodeEmail({ email, code });
-
-  const params = new URLSearchParams({
-    email,
-    intent,
-  });
-  if (name) {
-    params.set("name", name);
-  }
-  if (delivery.via === "console") {
-    params.set("dev", "1");
-  }
-  redirect(`/verify?${params.toString()}`);
-}
-
-export async function verifyLoginCode(
-  _prev: AuthState,
-  formData: FormData,
-): Promise<AuthState> {
-  const email = normalizeEmail(String(formData.get("email") ?? ""));
-  const code = String(formData.get("code") ?? "").trim();
-  const intentRaw = String(formData.get("intent") ?? "login");
-  const nameFromForm = String(formData.get("name") ?? "").trim();
-
-  if (!email || !code) {
-    return { error: "Email and code are required." };
-  }
-  if (!/^\d{6}$/.test(code)) {
-    return { error: "Enter the 6-digit code." };
-  }
-  if (!isAuthIntent(intentRaw)) {
-    return { error: "Invalid sign-in intent." };
-  }
-  const intent: AuthIntent = intentRaw;
-
-  const record = await db.loginCode.findFirst({
-    where: { email },
-    orderBy: { createdAt: "desc" },
-  });
-
-  if (!record || record.expiresAt.getTime() < Date.now()) {
-    return { error: "That code expired. Request a new one." };
-  }
-
-  const expectedIntent = isAuthIntent(record.intent) ? record.intent : intent;
-  if (expectedIntent !== intent) {
-    return { error: "That code was issued for a different sign-in step." };
-  }
-
-  if (!codesMatch(record.codeHash, hashLoginCode(email, code))) {
-    return { error: "That code is incorrect." };
-  }
-
-  await db.loginCode.deleteMany({ where: { email } });
-
-  const displayName =
-    nameFromForm || record.name?.trim() || email.split("@")[0] || "User";
-
-  let user = await db.user.findUnique({
-    where: { email },
-    include: { memberships: true, creatorProfile: true },
-  });
-
-  if (!user) {
-    if (intent === "login") {
-      return { error: "No account with that email. Sign up first." };
-    }
-    user = await db.user.create({
-      data: { email, name: displayName },
-      include: { memberships: true, creatorProfile: true },
-    });
-  } else if (displayName && displayName !== user.name && intent !== "login") {
-    user = await db.user.update({
-      where: { id: user.id },
-      data: { name: displayName },
-      include: { memberships: true, creatorProfile: true },
-    });
-  }
-
-  if (intent === "signup_brand") {
-    if (user.creatorProfile) {
-      return {
-        error:
-          "That email is already a creator account. Use a different email for a brand workspace.",
-      };
-    }
-    if (user.memberships.length === 0) {
-      const workspace = await createBrandWorkspace(user.id, user.name);
-      await setSession({
-        userId: user.id,
-        accountType: "brand",
-        workspaceId: workspace.id,
-        onboardingComplete: false,
-      });
-      redirect("/onboarding-brand");
-    }
-  }
-
-  if (intent === "signup_creator") {
-    if (user.memberships.length > 0) {
-      return {
-        error:
-          "That email is already a brand account. Use a different email for a creator profile.",
-      };
-    }
-    if (!user.creatorProfile) {
-      const profile = await createCreatorForUser(user.id, user.name);
-      await setSession({
-        userId: user.id,
-        accountType: "creator",
-        creatorId: profile.creatorId,
-        onboardingComplete: false,
-      });
-      redirect("/onboarding");
-    }
-  }
-
-  // Incomplete brand signup resumed via login (no creator side attached).
-  if (intent === "login" && !user.creatorProfile && user.memberships.length === 0) {
-    const workspace = await createBrandWorkspace(user.id, user.name);
-    await setSession({
-      userId: user.id,
-      accountType: "brand",
-      workspaceId: workspace.id,
-      onboardingComplete: false,
-    });
-    redirect("/onboarding-brand");
-  }
-
-  // Existing account login (or signup when role already present).
-  return establishSessionForUser(user.id);
-}
-
-export async function resendLoginCode(
-  _prev: AuthState,
-  formData: FormData,
-): Promise<AuthState> {
-  return requestLoginCode(_prev, formData);
-}
-
-/** Instant walkthrough login — no email code required. */
+/** Instant walkthrough login — no password required. */
 export async function loginDemoAccount(formData: FormData) {
   const role = String(formData.get("role") ?? "");
   const email = role === "creator" ? DEMO_CREATOR_EMAIL : DEMO_EMAIL;
@@ -462,11 +363,7 @@ export async function chooseAccountRole(formData: FormData) {
   redirect("/choose-role");
 }
 
-export async function switchAccountRole(formData: FormData) {
-  await chooseAccountRole(formData);
-}
-
-/** Dual-role accounts are no longer created; keep stubs so old UI links fail closed. */
+/** Dual-role attach is disabled; stubs fail closed. */
 export async function addCreatorProfileToAccount() {
   redirect("/brand");
 }

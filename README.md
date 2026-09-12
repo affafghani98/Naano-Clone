@@ -1,6 +1,6 @@
 # naano-clone
 
-Brand/business side of [naano.com](https://www.naano.com), rebuilt from observed usage 
+Brand and creator sides of [naano.com](https://www.naano.com), rebuilt from observed usage.
 
 ## Setup
 
@@ -23,10 +23,15 @@ Open http://localhost:3000
 
 Re-run seed or reset before recording a walkthrough so wallet, collaborations, and messages start clean.
 
-**Demo login (after seed):** `demo@naano.clone` / `demo1234`  
-Skips onboarding and lands on `/brand` (workspace **Relayed**, empty wallet, 12 creators, starter brief, NaanoBot thread, 0 collaborations).
+**Brand demo (after seed):** `demo@naano.clone` / `demo1234`  
+Skips onboarding and lands on `/brand` (workspace **Relayed**, empty wallet, 12 creators, starter draft brief, NaanoBot thread, 0 collaborations). Extra **active** campaigns exist for the creator Opportunities feed and also appear under Relayed Campaigns.
+
+**Creator demo (after seed):** `creator@naano.clone` / `demo1234`  
+Skips onboarding and lands on `/creator` (Maya Chen marketplace profile, open opportunities, NaanoBot, empty collaborations until you apply or a brand books).
 
 **New brand signup:** `/signup` → `/register?role=saas` → `/onboarding-brand` → `/brand`
+
+**New creator signup:** `/signup` → `/register?role=influencer` → `/onboarding` → `/creator`
 
 ## Database (SQLite ↔ Postgres)
 
@@ -57,10 +62,10 @@ Local SQLite and hosted Postgres can coexist as long as each environment has the
 
 ## Scope
 
-- **Brand side only.** Creator signup and creator dashboard are not built.
+- **Brand + creator sides.** Creator signup, onboarding, and dashboard are included; payments and OAuth stay mocked.
 - **Auth:** email/password only. No real LinkedIn/Google OAuth.
-- **Payments:** fake wallet top-ups and booking debits. No payment processor.
-- **AI:** onboarding website analysis and campaign “Create with AI” are mocked or stubbed. No model calls.
+- **Payments:** fake wallet top-ups and booking debits on the brand side. Creator withdraw / Stripe / bank connect are UI stubs.
+- **AI:** onboarding website analysis, campaign “Create with AI”, and creator “Copy for my AI” are mocked or copy-prompt only. No model calls.
 - **Pixel Naano:** install CTA only. No real tracking script.
 - **Integrations / MCP:** Settings UI is present; MCP server and pixel install are not real backends.
 
@@ -81,6 +86,11 @@ Local SQLite and hosted Postgres can coexist as long as each environment has the
 | EN/FR language toggle | Not built (English only) |
 | Multi-brand workspace switcher | Real create + switch; new workspace runs onboarding |
 | Notifications bell | Empty stub menu |
+| Creator LinkedIn/Google OAuth | Disabled buttons — use email |
+| Creator LinkedIn scrape | Mock profile from pasted URL |
+| Creator withdraw / Stripe / bank | Non-functional stubs |
+| Creator affiliate payouts | Static mock UI |
+| Creator “Add LinkedIn experience” | Stub |
 
 ## Assumptions
 
@@ -88,7 +98,8 @@ Local SQLite and hosted Postgres can coexist as long as each environment has the
 - **Onboarding step 3** was not captured on live Naano. This rebuild shows a short “marketplace is ready” screen, then Overview.
 - Booking is **wallet-funded**. Insufficient funds block the booking; the wallet cannot go negative.
 - **Direct Book** books at the listed price and does **not** attach a campaign brief. **Negotiate** can attach a campaign via the Campaign dropdown. Messages campaign filter only shows threads whose booking linked that brief.
-- Creator message threads open at **`invitation_sent`** (when the brand books/offers). Live Naano’s copy says the thread opens when the creator accepts; this rebuild has no creator accept flow, so threads open on send so the demo loop is visible.
+- Creator message threads open at **`invitation_sent`** (when the brand books/offers). Creator **Apply** creates an `invitation_received` collaboration and thread so both sides see it.
 - Results reach/clicks are **mocked**; attribution rows use creators you actually booked.
 - Collaborations has the core table and status tabs. Campaign filter, search, and tab counts were deferred.
 - Website analysis progress is mocked (~16s), not a live crawl.
+- Creator Opportunities list open (`active`) campaigns only; Relayed’s original starter brief stays `draft` for the brand demo.

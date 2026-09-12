@@ -80,6 +80,7 @@ export async function completeOnboarding(formData: FormData) {
 
   await setSession({
     userId: current.user.id,
+    accountType: "brand",
     workspaceId: current.workspace.id,
     onboardingComplete: true,
   });

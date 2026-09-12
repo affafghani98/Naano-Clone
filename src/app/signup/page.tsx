@@ -22,15 +22,16 @@ export default async function SignupPage() {
               Company signup, onboarding, marketplace, and campaigns.
             </p>
           </Link>
-          <div className="rounded-2xl border border-dashed border-neutral-300 p-6 text-neutral-500">
-            <p className="text-sm uppercase tracking-wide">Creator</p>
-            <p className="mt-2 text-xl font-medium text-neutral-700">
-              I create sponsored posts
+          <Link
+            href="/register?role=influencer"
+            className="rounded-2xl border border-neutral-300 bg-white p-6 hover:border-neutral-950"
+          >
+            <p className="text-sm uppercase tracking-wide text-neutral-500">Creator</p>
+            <p className="mt-2 text-xl font-medium">I create sponsored posts</p>
+            <p className="mt-2 text-sm text-neutral-600">
+              Creator signup, marketplace card, opportunities, and earnings.
             </p>
-            <p className="mt-2 text-sm">
-              Creator signup is out of scope for this rebuild.
-            </p>
-          </div>
+          </Link>
         </div>
         <p className="text-sm text-neutral-600">
           Already have an account?{" "}

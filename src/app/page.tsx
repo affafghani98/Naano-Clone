@@ -35,7 +35,9 @@ export default function HomePage() {
           </Link>
         </div>
       </section>
-      <p className="text-sm text-neutral-500">Brand side only in this rebuild.</p>
+      <p className="text-sm text-neutral-500">
+        Brand and creator demos included in this rebuild.
+      </p>
     </main>
   );
 }

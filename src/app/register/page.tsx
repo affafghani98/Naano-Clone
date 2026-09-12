@@ -2,7 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { redirectIfAuthenticated } from "@/lib/auth";
 import { AuthForm } from "../_components/auth-form";
-import { registerBrand } from "../actions/auth";
+import { registerBrand, registerCreator } from "../actions/auth";
+import { CreatorRegisterView } from "./creator-register-view";
 
 export default async function RegisterPage({
   searchParams,
@@ -11,6 +12,11 @@ export default async function RegisterPage({
 }) {
   await redirectIfAuthenticated();
   const { role } = await searchParams;
+
+  if (role === "influencer") {
+    return <CreatorRegisterView />;
+  }
+
   if (role !== "saas") {
     redirect("/signup");
   }

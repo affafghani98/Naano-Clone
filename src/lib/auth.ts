@@ -4,7 +4,7 @@ import { getSession } from "./session";
 
 export async function getCurrentUser() {
   const session = await getSession();
-  if (!session) {
+  if (!session || session.accountType !== "brand" || !session.workspaceId) {
     return null;
   }
 
@@ -44,7 +44,51 @@ export async function requireUser() {
   redirect("/api/session/clear");
 }
 
+export async function getCurrentCreator() {
+  const session = await getSession();
+  if (!session || session.accountType !== "creator" || !session.creatorId) {
+    return null;
+  }
+
+  const user = await db.user.findUnique({
+    where: { id: session.userId },
+    include: {
+      creatorProfile: {
+        include: { creator: true },
+      },
+    },
+  });
+
+  if (!user?.creatorProfile || user.creatorProfile.creatorId !== session.creatorId) {
+    return null;
+  }
+
+  return {
+    user,
+    profile: user.creatorProfile,
+    creator: user.creatorProfile.creator,
+  };
+}
+
+export async function requireCreator() {
+  const current = await getCurrentCreator();
+  if (current) {
+    return current;
+  }
+  redirect("/api/session/clear");
+}
+
 export async function redirectIfAuthenticated() {
+  const session = await getSession();
+  if (!session) {
+    return;
+  }
+
+  if (session.accountType === "creator") {
+    redirect(session.onboardingComplete ? "/creator" : "/onboarding");
+    return;
+  }
+
   const current = await getCurrentUser();
   if (!current) {
     return;

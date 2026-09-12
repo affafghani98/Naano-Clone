@@ -5,7 +5,12 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const session = await decodeSession(request.cookies.get(SESSION_COOKIE)?.value);
 
-  if (pathname.startsWith("/brand") || pathname.startsWith("/onboarding-brand")) {
+  const brandProtected =
+    pathname.startsWith("/brand") || pathname.startsWith("/onboarding-brand");
+  const creatorProtected =
+    pathname.startsWith("/creator") || pathname === "/onboarding";
+
+  if (brandProtected || creatorProtected) {
     if (!session) {
       const login = new URL("/login", request.url);
       login.searchParams.set("next", pathname);
@@ -18,5 +23,10 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/brand/:path*", "/onboarding-brand"],
+  matcher: [
+    "/brand/:path*",
+    "/onboarding-brand",
+    "/creator/:path*",
+    "/onboarding",
+  ],
 };

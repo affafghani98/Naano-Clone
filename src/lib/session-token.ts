@@ -1,8 +1,14 @@
 export const SESSION_COOKIE = "naano_session";
 
+export type AccountType = "brand" | "creator";
+
 export type SessionPayload = {
   userId: string;
-  workspaceId: string;
+  accountType: AccountType;
+  /** Present for brand sessions. */
+  workspaceId?: string;
+  /** Present for creator sessions. */
+  creatorId?: string;
   onboardingComplete: boolean;
 };
 
@@ -51,6 +57,41 @@ function safeEqual(left: string, right: string) {
   return mismatch === 0;
 }
 
+function normalizePayload(raw: unknown): SessionPayload | null {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+  const data = raw as Record<string, unknown>;
+  if (typeof data.userId !== "string" || typeof data.onboardingComplete !== "boolean") {
+    return null;
+  }
+
+  // Legacy brand cookies had workspaceId and no accountType.
+  if (data.accountType === "creator") {
+    if (typeof data.creatorId !== "string") {
+      return null;
+    }
+    return {
+      userId: data.userId,
+      accountType: "creator",
+      creatorId: data.creatorId,
+      onboardingComplete: data.onboardingComplete,
+    };
+  }
+
+  const workspaceId =
+    typeof data.workspaceId === "string" ? data.workspaceId : undefined;
+  if (!workspaceId) {
+    return null;
+  }
+  return {
+    userId: data.userId,
+    accountType: "brand",
+    workspaceId,
+    onboardingComplete: data.onboardingComplete,
+  };
+}
+
 export async function encodeSession(payload: SessionPayload) {
   const body = bytesToBase64Url(new TextEncoder().encode(JSON.stringify(payload)));
   const signature = await signBody(body);
@@ -70,7 +111,10 @@ export async function decodeSession(token: string | undefined) {
     return null;
   }
   try {
-    return JSON.parse(new TextDecoder().decode(base64UrlToBytes(body))) as SessionPayload;
+    const parsed: unknown = JSON.parse(
+      new TextDecoder().decode(base64UrlToBytes(body)),
+    );
+    return normalizePayload(parsed);
   } catch {
     return null;
   }

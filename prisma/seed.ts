@@ -1,6 +1,12 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { DEMO_EMAIL, DEMO_PASSWORD } from "../src/lib/demo-account";
+import {
+  DEMO_CREATOR_EMAIL,
+  DEMO_CREATOR_PASSWORD,
+  DEMO_CREATOR_SLUG,
+  DEMO_EMAIL,
+  DEMO_PASSWORD,
+} from "../src/lib/demo-account";
 
 const db = new PrismaClient();
 
@@ -523,12 +529,14 @@ async function reset() {
   await db.messageThread.deleteMany();
   await db.ledgerEntry.deleteMany();
   await db.collaboration.deleteMany();
+  await db.campaignApplication.deleteMany();
   await db.shortlistItem.deleteMany();
   await db.contentPost.deleteMany();
   await db.campaign.deleteMany();
   await db.icp.deleteMany();
   await db.workspaceInvite.deleteMany();
   await db.workspaceMember.deleteMany();
+  await db.creatorProfile.deleteMany();
   await db.workspace.deleteMany();
   await db.user.deleteMany();
   await db.creator.deleteMany();
@@ -656,20 +664,127 @@ async function seedDemoBrand() {
   return workspace.id;
 }
 
+async function seedOpenOpportunities(relayedWorkspaceId: string) {
+  await db.campaign.createMany({
+    data: [
+      {
+        workspaceId: relayedWorkspaceId,
+        title: "Relayed LinkedIn launch",
+        description:
+          "Sponsored LinkedIn posts that explain Relayed’s conversation-to-insight workflow for SaaS operators.",
+        status: "active",
+        productSummary:
+          "Show how Relayed turns Gong clips and Slack threads into one searchable narrative for product and CS.",
+        audienceSummary:
+          "VP Product and Head of CS at Series A–C B2B SaaS in the US, UK, and EU.",
+      },
+      {
+        workspaceId: relayedWorkspaceId,
+        title: "Relayed CS expansion proof",
+        description:
+          "Creator posts that make expansion feel inevitable — without another dashboard.",
+        status: "active",
+        productSummary:
+          "Highlight expansion signals Relayed surfaces from real customer conversations.",
+        audienceSummary: "Customer Success leaders and founder-led GTM teams.",
+      },
+    ],
+  });
+
+  const northstar = await db.workspace.create({
+    data: {
+      name: "Northstar CRM",
+      websiteUrl: "https://www.northstar-crm.example",
+      valueProposition: "Pipeline clarity for mid-market sales teams.",
+      industry: "SaaS",
+      companySize: "51-200",
+      onboardingComplete: true,
+      walletBalanceCents: 0,
+      targetRegions: JSON.stringify(["US", "UK"]),
+    },
+  });
+
+  await db.campaign.create({
+    data: {
+      workspaceId: northstar.id,
+      title: "Northstar outbound operators",
+      description:
+        "Looking for LinkedIn creators who can talk honestly about outbound systems and CRM hygiene.",
+      status: "active",
+      productSummary:
+        "Northstar CRM helps mid-market AEs keep next steps and deal risk visible without spreadsheet theatre.",
+      audienceSummary: "Sales managers and RevOps leads in US/UK SaaS.",
+    },
+  });
+}
+
+async function seedDemoCreator() {
+  const maya = await db.creator.findUnique({ where: { slug: DEMO_CREATOR_SLUG } });
+  if (!maya) {
+    throw new Error(`Missing seeded creator ${DEMO_CREATOR_SLUG}`);
+  }
+
+  await db.creator.update({
+    where: { id: maya.id },
+    data: {
+      headline: "B2B marketer writing about AI tooling for growth teams",
+      linkedInUrl: "https://www.linkedin.com/in/maya-chen",
+    },
+  });
+
+  const passwordHash = await bcrypt.hash(DEMO_CREATOR_PASSWORD, 10);
+  const user = await db.user.create({
+    data: {
+      email: DEMO_CREATOR_EMAIL,
+      passwordHash,
+      name: maya.name,
+      creatorProfile: {
+        create: {
+          creatorId: maya.id,
+          linkedInUrl: "https://www.linkedin.com/in/maya-chen",
+          headline: "B2B marketer writing about AI tooling for growth teams",
+          onboardingComplete: true,
+          referralCode: "ref-maya-demo",
+        },
+      },
+    },
+  });
+
+  await db.messageThread.create({
+    data: {
+      creatorId: maya.id,
+      isSystem: true,
+      title: "NaanoBot",
+      messages: {
+        create: {
+          sender: "system",
+          body: "No conversations yet — the thread opens with your first Booking.",
+        },
+      },
+    },
+  });
+
+  return user.id;
+}
+
 async function main() {
   await reset();
   await seedCreators();
-  await seedDemoBrand();
+  const relayedId = await seedDemoBrand();
+  await seedOpenOpportunities(relayedId);
+  await seedDemoCreator();
 
   const creators = await db.creator.count();
   const users = await db.user.count();
   const campaigns = await db.campaign.count();
+  const activeCampaigns = await db.campaign.count({ where: { status: "active" } });
 
   console.log("Seed complete.");
   console.log(`  users: ${users}`);
   console.log(`  creators: ${creators}`);
-  console.log(`  campaigns: ${campaigns}`);
-  console.log(`  demo login: ${DEMO_EMAIL} / ${DEMO_PASSWORD}`);
+  console.log(`  campaigns: ${campaigns} (${activeCampaigns} active)`);
+  console.log(`  brand demo: ${DEMO_EMAIL} / ${DEMO_PASSWORD}`);
+  console.log(`  creator demo: ${DEMO_CREATOR_EMAIL} / ${DEMO_CREATOR_PASSWORD}`);
 }
 
 main()

@@ -208,6 +208,7 @@ export async function switchWorkspace(formData: FormData) {
 
   await setSession({
     userId: current.user.id,
+    accountType: "brand",
     workspaceId: membership.workspace.id,
     onboardingComplete: membership.workspace.onboardingComplete,
   });
@@ -252,6 +253,7 @@ export async function createWorkspace(formData: FormData) {
 
   await setSession({
     userId: current.user.id,
+    accountType: "brand",
     workspaceId: workspace.id,
     onboardingComplete: false,
   });

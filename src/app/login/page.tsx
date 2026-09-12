@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { redirectIfAuthenticated } from "@/lib/auth";
-import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/demo-account";
+import {
+  DEMO_CREATOR_EMAIL,
+  DEMO_CREATOR_PASSWORD,
+  DEMO_EMAIL,
+  DEMO_PASSWORD,
+} from "@/lib/demo-account";
 import { AuthForm } from "../_components/auth-form";
 import { login } from "../actions/auth";
 
@@ -15,7 +20,10 @@ export default async function LoginPage() {
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Log in</h1>
           <p className="mt-2 text-sm text-neutral-600">
-            Seeded demo: {DEMO_EMAIL} / {DEMO_PASSWORD}
+            Brand demo: {DEMO_EMAIL} / {DEMO_PASSWORD}
+          </p>
+          <p className="mt-1 text-sm text-neutral-600">
+            Creator demo: {DEMO_CREATOR_EMAIL} / {DEMO_CREATOR_PASSWORD}
           </p>
         </div>
         <AuthForm action={login} submitLabel="Log in" />

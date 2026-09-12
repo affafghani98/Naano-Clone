@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentCreator, getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 export type SendMessageState = {
@@ -12,8 +12,9 @@ export async function sendThreadMessage(
   _prev: SendMessageState,
   formData: FormData,
 ): Promise<SendMessageState> {
-  const current = await getCurrentUser();
-  if (!current) {
+  const brand = await getCurrentUser();
+  const creator = brand ? null : await getCurrentCreator();
+  if (!brand && !creator) {
     return { error: "You need to log in." };
   }
 
@@ -29,8 +30,31 @@ export async function sendThreadMessage(
     return { error: "Keep messages under 2,000 characters." };
   }
 
+  if (brand) {
+    const thread = await db.messageThread.findFirst({
+      where: { id: threadId, workspaceId: brand.workspace.id },
+    });
+    if (!thread) {
+      return { error: "Conversation not found." };
+    }
+    if (thread.isSystem) {
+      return { error: "NaanoBot replies are mocked — it does not take replies yet." };
+    }
+
+    await db.message.create({
+      data: {
+        threadId: thread.id,
+        sender: "brand",
+        body,
+      },
+    });
+    revalidatePath("/brand/messages");
+    revalidatePath("/creator/messages");
+    return {};
+  }
+
   const thread = await db.messageThread.findFirst({
-    where: { id: threadId, workspaceId: current.workspace.id },
+    where: { id: threadId, creatorId: creator!.creator.id },
   });
   if (!thread) {
     return { error: "Conversation not found." };
@@ -42,11 +66,11 @@ export async function sendThreadMessage(
   await db.message.create({
     data: {
       threadId: thread.id,
-      sender: "brand",
+      sender: "creator",
       body,
     },
   });
-
+  revalidatePath("/creator/messages");
   revalidatePath("/brand/messages");
   return {};
 }

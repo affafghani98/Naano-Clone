@@ -14,12 +14,13 @@ datasource db {
 }
 
 model User {
-  id           String            @id @default(cuid())
-  email        String            @unique
-  passwordHash String
-  name         String
-  createdAt    DateTime          @default(now())
-  memberships  WorkspaceMember[]
+  id             String          @id @default(cuid())
+  email          String          @unique
+  passwordHash   String
+  name           String
+  createdAt      DateTime        @default(now())
+  memberships    WorkspaceMember[]
+  creatorProfile CreatorProfile?
 }
 
 model Workspace {
@@ -81,21 +82,22 @@ model Icp {
 }
 
 model Campaign {
-  id               String          @id @default(cuid())
+  id               String                @id @default(cuid())
   workspaceId      String
   title            String
   description      String
-  status           String          @default("draft")
+  status           String                @default("draft")
   productSummary   String?
   audienceSummary  String?
-  createdAt        DateTime        @default(now())
-  workspace        Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdAt        DateTime              @default(now())
+  workspace        Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   collaborations   Collaboration[]
+  applications     CampaignApplication[]
 }
 
 model Creator {
-  id                     String            @id @default(cuid())
-  slug                   String            @unique
+  id                     String                @id @default(cuid())
+  slug                   String                @unique
   name                   String
   photoUrl               String
   country                String
@@ -114,11 +116,40 @@ model Creator {
   jobTitleBreakdown      String
   seniorityBreakdown     String
   overview               String
+  headline               String?
+  linkedInUrl            String?
   contentPosts           ContentPost[]
   shortlist              ShortlistItem[]
   collaborations         Collaboration[]
   threads                MessageThread[]
   attributions           AttributionStat[]
+  profile                CreatorProfile?
+  applications           CampaignApplication[]
+}
+
+model CreatorProfile {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  creatorId          String   @unique
+  linkedInUrl        String?
+  headline           String?
+  onboardingComplete Boolean  @default(false)
+  referralCode       String   @unique
+  createdAt          DateTime @default(now())
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creator            Creator  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+}
+
+model CampaignApplication {
+  id         String   @id @default(cuid())
+  campaignId String
+  creatorId  String
+  status     String   @default("pending")
+  createdAt  DateTime @default(now())
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  creator    Creator  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, creatorId])
 }
 
 model ContentPost {
@@ -181,12 +212,12 @@ model LedgerEntry {
 
 model MessageThread {
   id              String         @id @default(cuid())
-  workspaceId     String
+  workspaceId     String?
   creatorId       String?
   collaborationId String?        @unique
   isSystem        Boolean        @default(false)
   title           String
-  workspace       Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspace       Workspace?     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   creator         Creator?       @relation(fields: [creatorId], references: [id], onDelete: SetNull)
   collaboration   Collaboration? @relation(fields: [collaborationId], references: [id], onDelete: SetNull)
   messages        Message[]

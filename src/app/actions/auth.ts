@@ -9,8 +9,20 @@ export type AuthState = {
   error?: string;
 };
 
-function landingFor(onboardingComplete: boolean) {
+function brandLanding(onboardingComplete: boolean) {
   return onboardingComplete ? "/brand" : "/onboarding-brand";
+}
+
+function creatorLanding(onboardingComplete: boolean) {
+  return onboardingComplete ? "/creator" : "/onboarding";
+}
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 40);
 }
 
 export async function registerBrand(
@@ -76,10 +88,112 @@ export async function registerBrand(
 
   await setSession({
     userId: user.id,
+    accountType: "brand",
     workspaceId,
     onboardingComplete: false,
   });
   redirect("/onboarding-brand");
+}
+
+export async function registerCreator(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const name = String(formData.get("name") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+
+  if (!name || !email || !password) {
+    return { error: "Name, email, and password are required." };
+  }
+  if (!email.includes("@")) {
+    return { error: "Enter a valid email." };
+  }
+  if (password.length < 8) {
+    return { error: "Password must be at least 8 characters." };
+  }
+
+  const existing = await db.user.findUnique({ where: { email } });
+  if (existing) {
+    return { error: "That email is already registered." };
+  }
+
+  const baseSlug = slugify(name) || "creator";
+  let slug = baseSlug;
+  let attempt = 0;
+  while (await db.creator.findUnique({ where: { slug } })) {
+    attempt += 1;
+    slug = `${baseSlug}-${attempt}`;
+  }
+
+  const referralCode = `ref-${slug}-${Math.random().toString(36).slice(2, 8)}`;
+
+  const user = await db.user.create({
+    data: {
+      name,
+      email,
+      passwordHash: await bcrypt.hash(password, 10),
+      creatorProfile: {
+        create: {
+          referralCode,
+          onboardingComplete: false,
+          creator: {
+            create: {
+              slug,
+              name,
+              photoUrl: `https://i.pravatar.cc/160?u=${slug}`,
+              country: "—",
+              countryCode: "XX",
+              industry: "B2B",
+              tags: "[]",
+              followers: 0,
+              medianViews: 0,
+              cpmCents: 0,
+              postCostCents: 0,
+              bundleCostCents: 0,
+              matchPercent: 50,
+              typicalReach: 0,
+              postsAnalyzed: 0,
+              audienceMatchPercent: 50,
+              jobTitleBreakdown: "[]",
+              seniorityBreakdown: "[]",
+              overview: "Creator profile in progress.",
+              headline: null,
+              linkedInUrl: null,
+            },
+          },
+        },
+      },
+    },
+    include: { creatorProfile: true },
+  });
+
+  const creatorId = user.creatorProfile?.creatorId;
+  if (!creatorId) {
+    return { error: "Could not create a creator profile." };
+  }
+
+  await db.messageThread.create({
+    data: {
+      creatorId,
+      isSystem: true,
+      title: "NaanoBot",
+      messages: {
+        create: {
+          sender: "system",
+          body: "No conversations yet — the thread opens with your first Booking.",
+        },
+      },
+    },
+  });
+
+  await setSession({
+    userId: user.id,
+    accountType: "creator",
+    creatorId,
+    onboardingComplete: false,
+  });
+  redirect("/onboarding");
 }
 
 export async function login(
@@ -95,11 +209,24 @@ export async function login(
 
   const user = await db.user.findUnique({
     where: { email },
-    include: { memberships: { include: { workspace: true } } },
+    include: {
+      memberships: { include: { workspace: true } },
+      creatorProfile: true,
+    },
   });
 
   if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
     return { error: "Email or password is wrong." };
+  }
+
+  if (user.creatorProfile) {
+    await setSession({
+      userId: user.id,
+      accountType: "creator",
+      creatorId: user.creatorProfile.creatorId,
+      onboardingComplete: user.creatorProfile.onboardingComplete,
+    });
+    redirect(creatorLanding(user.creatorProfile.onboardingComplete));
   }
 
   const membership = user.memberships[0];
@@ -109,10 +236,11 @@ export async function login(
 
   await setSession({
     userId: user.id,
+    accountType: "brand",
     workspaceId: membership.workspaceId,
     onboardingComplete: membership.workspace.onboardingComplete,
   });
-  redirect(landingFor(membership.workspace.onboardingComplete));
+  redirect(brandLanding(membership.workspace.onboardingComplete));
 }
 
 export async function logout() {

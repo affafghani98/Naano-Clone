@@ -1,3 +1,4 @@
+import { PageChat } from "../_components/page-chat";
 import { CreatorSidebar } from "./creator-sidebar";
 import { CreatorTopBar } from "./creator-top-bar";
 
@@ -21,6 +22,7 @@ export function CreatorShell({
           canSwitchToBrand={canSwitchToBrand}
         />
         <main className="flex-1 px-8 py-8">{children}</main>
+        <PageChat />
       </div>
     </div>
   );

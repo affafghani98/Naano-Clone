@@ -1,6 +1,6 @@
+import { PageChat } from "../_components/page-chat";
 import { BrandSidebar } from "./brand-sidebar";
 import { BrandTopBar } from "./brand-top-bar";
-import { ChatStub } from "./chat-stub";
 import type { WorkspaceOption } from "./workspace-switcher";
 
 type Props = {
@@ -33,7 +33,7 @@ export function BrandShell({
           canSwitchToCreator={canSwitchToCreator}
         />
         <main className="flex-1 px-8 py-8">{children}</main>
-        <ChatStub />
+        <PageChat />
       </div>
     </div>
   );

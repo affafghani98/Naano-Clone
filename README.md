@@ -1,8 +1,8 @@
 # naano-clone
 
-Brand/business side of [naano.com](https://www.naano.com), rebuilt from observed usage.
+Brand/business side of [naano.com](https://www.naano.com), rebuilt from observed usage 
 
-## Reset demo state
+## Setup
 
 Seed data lives in `prisma/seed.ts` only. It is not hardcoded in pages.
 
@@ -11,33 +11,55 @@ cp .env.example .env
 npm install
 npx prisma migrate dev
 npm run db:seed
-```
-
-To wipe the database and reload the demo account, creators, and starter brief:
-
-```bash
-npm run db:reset
-```
-
-`db:reset` runs migrations from scratch and then `prisma/seed.ts`. `npm run db:seed` alone also wipes tables and reloads the same fixture. Re-run either command before recording a walkthrough.
-
-Demo login (after seed): `demo@naano.clone` / `demo1234`
-
-```bash
 npm run dev
 ```
 
-Open http://localhost:3000 — marketing landing (logged out). Log in with the demo account to skip onboarding and land on `/brand`. New brand signup goes `/signup` → `/register?role=saas` → `/onboarding-brand`.
+Open http://localhost:3000
 
-Website analysis is mocked (~16s progress, no live crawl).
+| Command | What it does |
+| --- | --- |
+| `npm run db:seed` | Wipes tables and reloads the demo fixture |
+| `npm run db:reset` | Runs migrations from scratch, then seeds |
+
+Re-run seed or reset before recording a walkthrough so wallet, collaborations, and messages start clean.
+
+**Demo login (after seed):** `demo@naano.clone` / `demo1234`  
+Skips onboarding and lands on `/brand` (workspace **Relayed**, empty wallet, 12 creators, starter brief, NaanoBot thread, 0 collaborations).
+
+**New brand signup:** `/signup` → `/register?role=saas` → `/onboarding-brand` → `/brand`
+
+## Scope
+
+- **Brand side only.** Creator signup and creator dashboard are not built.
+- **Auth:** email/password only. No real LinkedIn/Google OAuth.
+- **Payments:** fake wallet top-ups and booking debits. No payment processor.
+- **AI:** onboarding website analysis and campaign “Create with AI” are mocked or stubbed. No model calls.
+- **Pixel Naano:** install CTA only. No real tracking script.
+- **Integrations / MCP:** out of scope. Not built.
+
+## Cut / stub inventory
+
+| Item | Status |
+| --- | --- |
+| Campaign “Create with AI” | Stub page (does not generate a brief) |
+| Campaign “Start from your link” | Stub page (URL field disabled) |
+| Campaign “Launch free with the Naano team” | Link-out to Cal.com stub |
+| Pixel Naano “Install the pixel” | Disabled button |
+| Persistent chat (“What would you like to see?”) | Stub — does not call a model |
+| Settings | Placeholder page |
+| Book a call / setup call | Opens `https://cal.com`, not the live Naano scheduler URL |
+| Integrations | Menu item labeled out of scope |
+| EN/FR language toggle | Not built (English only) |
+| Multi-brand workspace switcher | Workspace name is a label only |
+| Notifications bell | Empty stub menu |
 
 ## Assumptions
 
-- After Book / Add and continue: confirmation notice, then Collaborations. Not confirmed on the live site.
-- Booking is wallet-funded. Insufficient funds block the booking; the wallet cannot go negative.
-- Campaign create paths (AI / from-link) and Pixel Naano install are stubs.
-- Results clicks/reach are mocked; attribution rows use booked creators.
-- Creator message threads open when a booking is sent (`invitation_sent`). Live Naano waits until the creator accepts; this rebuild has no accept flow.
-- Onboarding step 3 was not captured on the live site. This rebuild shows a short “marketplace is ready” screen, then Overview.
-- AI website analysis, payments, and Pixel Naano are mocked.
-- Integrations / MCP are out of scope.
+- After **Book** / **Add and continue**: confirmation notice, then **Collaborations**. Not confirmed on the live site.
+- **Onboarding step 3** was not captured on live Naano. This rebuild shows a short “marketplace is ready” screen, then Overview.
+- Booking is **wallet-funded**. Insufficient funds block the booking; the wallet cannot go negative.
+- **Direct Book** books at the listed price and does **not** attach a campaign brief. **Negotiate** can attach a campaign via the Campaign dropdown. Messages campaign filter only shows threads whose booking linked that brief.
+- Creator message threads open at **`invitation_sent`** (when the brand books/offers). Live Naano’s copy says the thread opens when the creator accepts; this rebuild has no creator accept flow, so threads open on send so the demo loop is visible.
+- Results reach/clicks are **mocked**; attribution rows use creators you actually booked.
+- Collaborations has the core table and status tabs. Campaign filter, search, and tab counts were deferred.
+- Website analysis progress is mocked (~16s), not a live crawl.

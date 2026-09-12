@@ -1,0 +1,38 @@
+---
+description: General coding rules — verify before coding, clean structure, honest delivery
+alwaysApply: true
+---
+
+# General coding rules (always follow)
+
+## Before implementing
+- Never assume unclear requirements, product behavior, API shape, or data
+  format — ask or verify first. No guessing.
+- Propose a short plan (files touched, structure, approach) before writing
+  non-trivial code. Wait for confirmation on anything ambiguous.
+- Do not take shortcuts that look correct but skip edge cases, error handling,
+  or validation just to appear "done." No loopholes, no hardcoded values
+  standing in for real logic unless explicitly told to mock.
+
+## Code structure
+- Imports always at the top of the file, grouped (stdlib/external/internal),
+  never inline or mid-file.
+- One clear responsibility per function/component. No god-functions.
+- Consistent naming (no mixing camelCase/snake_case in the same language).
+- No dead code, no commented-out code, no leftover debug prints/logs.
+- No duplicated logic — extract shared code instead of copy-pasting.
+
+## Comments
+- Minimal comments. Only explain *why*, never *what*.
+- No filler comments like "// helper function" or "// main logic here."
+
+## Output discipline
+- No placeholder/TODO code passed off as finished work.
+- No unnecessary abstraction or premature optimization.
+- No unrelated changes bundled into a task.
+- Every function/module should be independently testable and runnable.
+
+## Honesty
+- If something can't be done as asked, or a better approach exists, say so
+  directly instead of silently doing a weaker version.
+- If a limitation, risk, or trade-off exists, state it plainly, don't bury it.

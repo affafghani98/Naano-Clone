@@ -1,0 +1,200 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String            @id @default(cuid())
+  email        String            @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime          @default(now())
+  memberships  WorkspaceMember[]
+}
+
+model Workspace {
+  id                 String            @id @default(cuid())
+  name               String
+  websiteUrl         String?
+  valueProposition   String?
+  onboardingComplete Boolean           @default(false)
+  walletBalanceCents Int               @default(0)
+  createdAt          DateTime          @default(now())
+  members            WorkspaceMember[]
+  icps               Icp[]
+  campaigns          Campaign[]
+  shortlist          ShortlistItem[]
+  collaborations     Collaboration[]
+  ledger             LedgerEntry[]
+  threads            MessageThread[]
+  dailyMetrics       DailyMetric[]
+  attributions       AttributionStat[]
+}
+
+model WorkspaceMember {
+  id          String    @id @default(cuid())
+  userId      String
+  workspaceId String
+  role        String    @default("owner")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+}
+
+model Icp {
+  id          String    @id @default(cuid())
+  workspaceId String
+  title       String
+  description String
+  sortOrder   Int
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model Campaign {
+  id               String          @id @default(cuid())
+  workspaceId      String
+  title            String
+  description      String
+  status           String          @default("draft")
+  productSummary   String?
+  audienceSummary  String?
+  createdAt        DateTime        @default(now())
+  workspace        Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  collaborations   Collaboration[]
+}
+
+model Creator {
+  id                     String            @id @default(cuid())
+  slug                   String            @unique
+  name                   String
+  photoUrl               String
+  country                String
+  countryCode            String
+  industry               String
+  tags                   String
+  followers              Int
+  medianViews            Int
+  cpmCents               Int
+  postCostCents          Int
+  bundleCostCents        Int
+  matchPercent           Int
+  typicalReach           Int
+  postsAnalyzed          Int
+  audienceMatchPercent   Int
+  jobTitleBreakdown      String
+  seniorityBreakdown     String
+  overview               String
+  contentPosts           ContentPost[]
+  shortlist              ShortlistItem[]
+  collaborations         Collaboration[]
+  threads                MessageThread[]
+  attributions           AttributionStat[]
+}
+
+model ContentPost {
+  id          String   @id @default(cuid())
+  creatorId   String
+  snippet     String
+  photoUrl    String
+  views       Int
+  likes       Int
+  comments    Int
+  reposts     Int
+  originalUrl String
+  postedAt    DateTime
+  reachPoints String
+  creator     Creator  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+}
+
+model ShortlistItem {
+  workspaceId String
+  creatorId   String
+  createdAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  creator     Creator   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@id([workspaceId, creatorId])
+}
+
+model Collaboration {
+  id                   String          @id @default(cuid())
+  workspaceId          String
+  creatorId            String
+  campaignId           String?
+  format               String
+  listedPriceCents     Int
+  agreedPriceCents     Int
+  status               String
+  nextAction           String?
+  dueDate              DateTime?
+  approveBeforePublish Boolean         @default(false)
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  workspace            Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  creator              Creator         @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  campaign             Campaign?       @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  ledger               LedgerEntry[]
+  thread               MessageThread?
+}
+
+model LedgerEntry {
+  id              String         @id @default(cuid())
+  workspaceId     String
+  type            String
+  amountCents     Int
+  description     String
+  createdAt       DateTime       @default(now())
+  collaborationId String?
+  workspace       Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  collaboration   Collaboration? @relation(fields: [collaborationId], references: [id], onDelete: SetNull)
+}
+
+model MessageThread {
+  id              String         @id @default(cuid())
+  workspaceId     String
+  creatorId       String?
+  collaborationId String?        @unique
+  isSystem        Boolean        @default(false)
+  title           String
+  workspace       Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  creator         Creator?       @relation(fields: [creatorId], references: [id], onDelete: SetNull)
+  collaboration   Collaboration? @relation(fields: [collaborationId], references: [id], onDelete: SetNull)
+  messages        Message[]
+}
+
+model Message {
+  id        String        @id @default(cuid())
+  threadId  String
+  sender    String
+  body      String
+  createdAt DateTime      @default(now())
+  thread    MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+}
+
+model DailyMetric {
+  id               String    @id @default(cuid())
+  workspaceId      String
+  date             DateTime
+  qualifiedClicks  Int       @default(0)
+  estimatedReach   Int       @default(0)
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, date])
+}
+
+model AttributionStat {
+  id              String    @id @default(cuid())
+  workspaceId     String
+  creatorId       String
+  clicks          Int       @default(0)
+  qualifiedClicks Int       @default(0)
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  creator         Creator   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, creatorId])
+}

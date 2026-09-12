@@ -1,0 +1,12 @@
+---
+description: Automatic prompt/response capture — do not edit the logs
+alwaysApply: true
+---
+
+# Agent capture
+
+Prompt and final-response capture is automatic via `.cursor/hooks.json`.
+
+- Do not edit, tidy, summarise, or delete entries in `.agent-logs/`.
+- Do not add `.agent-logs/` to `.gitignore`.
+- Do not log manually. The hook writes the prompt and the final response only.

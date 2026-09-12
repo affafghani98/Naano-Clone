@@ -1,0 +1,7 @@
+.cursor/hooks/state/
+node_modules/
+.next/
+out/
+prisma/dev.db
+prisma/dev.db-journal
+.env

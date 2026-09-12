@@ -70,7 +70,7 @@ Do **not** run the old SQLite `file:./dev.db` URL against this schema — local 
 
 - **Brand + creator sides.** Creator signup, onboarding, and dashboard are included; payments and OAuth stay mocked.
 - **Auth:** email + password (bcrypt hashes in the DB). No OAuth, no email OTP. Seeded demos also have instant login buttons on `/login`.
-- **Payments:** fake wallet top-ups and booking debits on the brand side. Creator withdraw / Stripe / bank connect are UI stubs.
+- **Payments:** fake wallet top ups and booking/application debits on the brand side. Creator earnings credit on accept; withdraw is a demo ledger move (no bank).
 - **AI:** Page chat + brand/creator onboarding drafts use Groq. Campaign “Create with AI” and “Copy for my AI” stay stubbed/copy-only. Without `GROQ_API_KEY`, onboarding falls back to labeled generic profiles.
 - **Pixel Naano:** install CTA only. No real tracking script.
 - **Integrations / MCP:** Settings UI is present; MCP server and pixel install are not real backends.
@@ -79,27 +79,18 @@ Do **not** run the old SQLite `file:./dev.db` URL against this schema — local 
 
 | Item | Status |
 | --- | --- |
-| Campaign “Create with AI” | Stub page (does not generate a brief) |
-| Campaign “Start from your link” | Stub page (URL field disabled) |
-| Campaign “Launch free with the Naano team” | Link-out to Cal.com stub |
-| Pixel Naano “Install the pixel” | Disabled button |
-| Persistent chat (“What would you like to see?”) | Stub — does not call a model |
-| Settings | Profile, Audience, Team invite, and Integrations UI are built |
-| Book a call / setup call | Opens `https://cal.com`, not the live Naano scheduler URL |
-| Integrations MCP server | UI + copyable URL only — no real MCP server |
-| Pixel Naano install | Shown as “Not installed”; no script injected |
-| Team invites | Stored in DB; no real email send |
-| EN/FR language toggle | Not built (English only) |
-| Multi-brand workspace switcher | Real create + switch; new workspace runs onboarding |
-| Notifications bell | Empty stub menu |
-| Creator LinkedIn/Google OAuth | Removed — email signup only |
-| Creator LinkedIn scrape | Mock profile from pasted URL |
-| Creator withdraw / Stripe / bank | Empty-state panel (no dead Connect buttons) |
-| Creator affiliate payouts | Static mock UI |
-| Brand write-a-brief campaign create | Real — can publish to Opportunities |
-| Brand publish/unpublish campaign | Real on campaign detail |
-| Brand accept/decline applications | Real on Collaborations |
-| Creator accept/decline bookings | Real on Collaborations (decline refunds wallet) |
+| Campaign “Create with AI” | Real: Groq drafts a brief, then opens campaign detail |
+| Campaign “Start from your link” | Demo only (disabled) |
+| Campaign “Launch free with the Naano team” | Demo only (Cal.com link) |
+| Pixel Naano “Install the pixel” | Demo only (disabled) |
+| Page chat | Real via Groq |
+| Notifications bell | Real in-app events (apply, accept, book, message) |
+| Integrations MCP server | UI only, labeled demo only |
+| Pixel Naano install | Demo only |
+| Creator withdraw | Demo wallet withdraw (no bank) |
+| Creator earnings | Real from accepted collabs / bookings |
+| Collaborations search / campaign filter / tab counts | Real |
+| Creator “Copy for my AI” | Real clipboard prompt from campaign fields |
 
 ## Assumptions
 

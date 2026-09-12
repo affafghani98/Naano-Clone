@@ -528,6 +528,8 @@ async function reset() {
   await db.message.deleteMany();
   await db.messageThread.deleteMany();
   await db.ledgerEntry.deleteMany();
+  await db.creatorLedgerEntry.deleteMany();
+  await db.notification.deleteMany();
   await db.collaboration.deleteMany();
   await db.campaignApplication.deleteMany();
   await db.shortlistItem.deleteMany();

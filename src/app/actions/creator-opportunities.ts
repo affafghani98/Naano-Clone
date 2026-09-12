@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentCreator } from "@/lib/auth";
 import { COLLAB_STATUS, daysFromNow } from "@/lib/booking";
 import { db } from "@/lib/db";
+import { notifyUsers, workspaceMemberUserIds } from "@/lib/notifications";
 
 export type ApplyState = {
   error?: string;
@@ -88,10 +89,18 @@ export async function applyToCampaign(
         messages: {
           create: {
             sender: "system",
-            body: `${current.creator.name} applied to “${campaign.title}”. Waiting for ${campaign.workspace.name} to accept or decline.`,
+            body: `${current.creator.name} applied to "${campaign.title}". Waiting for ${campaign.workspace.name} to accept or decline.`,
           },
         },
       },
+    });
+
+    const brandUsers = await workspaceMemberUserIds(tx, campaign.workspaceId);
+    await notifyUsers(tx, {
+      userIds: brandUsers,
+      title: "New campaign application",
+      body: `${current.creator.name} applied to ${campaign.title}.`,
+      href: "/brand/collaborations",
     });
   });
 

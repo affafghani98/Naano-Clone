@@ -188,15 +188,15 @@ function AnalyticsPanel({
         <article className="rounded-2xl border border-neutral-200 bg-white p-5">
           <h2 className="font-semibold">Measure site conversions</h2>
           <p className="mt-2 text-sm text-neutral-600">
-            Pixel Naano tracks visits, sign-ups, and revenue per post. This demo
-            does not install a real pixel.
+            Pixel Naano would track visits, sign ups, and revenue per post. Demo
+            only: no tracking script is installed.
           </p>
           <button
             type="button"
             disabled
             className="mt-4 rounded-full bg-neutral-950 px-4 py-2 text-sm font-medium text-white opacity-50"
           >
-            Install the pixel
+            Install the pixel (demo only)
           </button>
         </article>
       </div>

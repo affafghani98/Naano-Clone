@@ -605,8 +605,8 @@ function IntegrationsPanel() {
           <span className="rounded-full border border-neutral-700 px-2 py-0.5">
             NO API key
           </span>
-          <span className="rounded-full border border-emerald-700 px-2 py-0.5 text-emerald-300">
-            ● ONLINE
+          <span className="rounded-full border border-amber-700 px-2 py-0.5 text-amber-200">
+            ● DEMO ONLY
           </span>
         </div>
       </article>
@@ -665,9 +665,8 @@ function IntegrationsPanel() {
       </div>
 
       <p className="text-xs text-neutral-500">
-        The assistant only sees the active workspace. Every write action would
-        require server confirmation. This rebuild shows the Integrations UI —
-        the MCP server itself is not implemented.
+        Demo only. The MCP server is not implemented. Copying the URL does not
+        connect a real assistant.
       </p>
 
       <article className="rounded-2xl border border-neutral-200 bg-white">
@@ -677,12 +676,11 @@ function IntegrationsPanel() {
           className="flex w-full items-center justify-between px-4 py-3 text-left"
         >
           <span className="font-semibold">Pixel Naano</span>
-          <span className="text-sm text-amber-700">● Not installed yet</span>
+          <span className="text-sm text-amber-700">● Demo only</span>
         </button>
         {pixelOpen ? (
           <div className="border-t border-neutral-100 px-4 py-3 text-sm text-neutral-600">
-            Pixel Naano tracks visits, sign-ups, and revenue per post. Install is
-            mocked in this demo — no script is injected.
+            Pixel install is mocked. No script is injected.
           </div>
         ) : null}
       </article>

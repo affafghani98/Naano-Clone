@@ -12,6 +12,8 @@ import {
   type BookingFormat,
   type BookingMode,
 } from "./booking";
+import { formatEuro } from "./money";
+import { notifyUsers } from "./notifications";
 
 export type PlaceBookingInput = {
   workspaceId: string;
@@ -153,6 +155,18 @@ export async function placeBooking(
       },
     },
   });
+
+  const profile = await tx.creatorProfile.findUnique({
+    where: { creatorId: creator.id },
+  });
+  if (profile) {
+    await notifyUsers(tx, {
+      userIds: [profile.userId],
+      title: input.mode === "offer" ? "New offer" : "New booking",
+      body: `${workspace.name} sent a ${input.mode === "offer" ? "offer" : "booking"} for ${formatLabel(input.format)} (${formatEuro(charge.chargeCents)}).`,
+      href: "/creator/collaborations",
+    });
+  }
 
   return {
     ok: true,

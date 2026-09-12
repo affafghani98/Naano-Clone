@@ -47,9 +47,35 @@ export function CollaborationsView({
   notice: string | null;
 }) {
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("all");
+  const [query, setQuery] = useState("");
+  const [campaign, setCampaign] = useState("all");
   const [showNotice, setShowNotice] = useState(Boolean(notice));
+
+  const campaigns = Array.from(
+    new Set(
+      rows
+        .map((row) => row.campaignTitle)
+        .filter((value): value is string => Boolean(value)),
+    ),
+  ).sort();
+
+  const searched = rows.filter((row) => {
+    if (campaign !== "all" && row.campaignTitle !== campaign) {
+      return false;
+    }
+    const q = query.trim().toLowerCase();
+    if (!q) {
+      return true;
+    }
+    return (
+      row.creatorName.toLowerCase().includes(q) ||
+      (row.campaignTitle?.toLowerCase().includes(q) ?? false) ||
+      (row.nextAction?.toLowerCase().includes(q) ?? false)
+    );
+  });
+
   const filter = TABS.find((item) => item.id === tab);
-  const visible = rows.filter((row) => {
+  const visible = searched.filter((row) => {
     const statuses = filter?.statuses;
     if (!statuses) {
       return true;
@@ -79,21 +105,47 @@ export function CollaborationsView({
         </div>
       ) : null}
 
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search creator, campaign, or next action"
+          className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm sm:max-w-sm"
+        />
+        <select
+          value={campaign}
+          onChange={(event) => setCampaign(event.target.value)}
+          className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+        >
+          <option value="all">All campaigns</option>
+          {campaigns.map((title) => (
+            <option key={title} value={title}>
+              {title}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div className="flex flex-wrap gap-2">
-        {TABS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setTab(item.id)}
-            className={`rounded-full px-3 py-1.5 text-sm ${
-              tab === item.id
-                ? "bg-neutral-950 text-white"
-                : "border border-neutral-300"
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
+        {TABS.map((item) => {
+          const count = item.statuses
+            ? searched.filter((row) => item.statuses!.includes(row.status)).length
+            : searched.length;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setTab(item.id)}
+              className={`rounded-full px-3 py-1.5 text-sm ${
+                tab === item.id
+                  ? "bg-neutral-950 text-white"
+                  : "border border-neutral-300"
+              }`}
+            >
+              {item.label} ({count})
+            </button>
+          );
+        })}
       </div>
 
       {visible.length === 0 ? (

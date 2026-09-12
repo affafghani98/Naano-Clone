@@ -6,12 +6,12 @@ export default function LaunchWithTeamPage() {
       <Link href="/brand/campaigns/new" className="text-sm underline">
         Back
       </Link>
+      <p className="text-xs uppercase tracking-wide text-neutral-500">Demo only</p>
       <h1 className="text-3xl font-semibold tracking-tight">
         Launch free with the Naano team
       </h1>
       <p className="text-sm text-neutral-600">
-        On the live product this books a setup call. Here it opens the same Cal
-        stub used elsewhere in the app.
+        Opens a generic Cal.com page. Not a live Naano scheduler.
       </p>
       <a
         href="https://cal.com"
@@ -19,7 +19,7 @@ export default function LaunchWithTeamPage() {
         rel="noreferrer"
         className="inline-flex rounded-full bg-neutral-950 px-4 py-2 text-sm font-medium text-white"
       >
-        Book a setup call
+        Open Cal.com demo link
       </a>
     </section>
   );

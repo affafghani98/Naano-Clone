@@ -1,17 +1,23 @@
 "use client";
 
 import { useState } from "react";
+import {
+  NotificationsMenu,
+  type NotificationItem,
+} from "../_components/notifications-menu";
 import { logout } from "../actions/auth";
 
 type Props = {
   userName: string;
+  notifications: NotificationItem[];
 };
 
-export function CreatorTopBar({ userName }: Props) {
+export function CreatorTopBar({ userName, notifications }: Props) {
   const [open, setOpen] = useState(false);
 
   return (
     <header className="flex items-center justify-end gap-3 border-b border-neutral-200 bg-white px-6 py-3">
+      <NotificationsMenu items={notifications} />
       <div className="relative">
         <button
           type="button"

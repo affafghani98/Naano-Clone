@@ -1,4 +1,5 @@
 import { PageChat } from "../_components/page-chat";
+import type { NotificationItem } from "../_components/notifications-menu";
 import { BrandSidebar } from "./brand-sidebar";
 import { BrandTopBar } from "./brand-top-bar";
 import type { WorkspaceOption } from "./workspace-switcher";
@@ -8,6 +9,7 @@ type Props = {
   currentWorkspaceId: string;
   workspaces: WorkspaceOption[];
   walletBalanceCents: number;
+  notifications: NotificationItem[];
   children: React.ReactNode;
 };
 
@@ -16,6 +18,7 @@ export function BrandShell({
   currentWorkspaceId,
   workspaces,
   walletBalanceCents,
+  notifications,
   children,
 }: Props) {
   return (
@@ -28,6 +31,7 @@ export function BrandShell({
         <BrandTopBar
           userName={userName}
           walletBalanceCents={walletBalanceCents}
+          notifications={notifications}
         />
         <main className="flex-1 px-8 py-8">{children}</main>
         <PageChat />

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AiCampaignForm } from "./ai-campaign-form";
 
 export default function CreateWithAiPage() {
   return (
@@ -8,15 +9,10 @@ export default function CreateWithAiPage() {
       </Link>
       <h1 className="text-3xl font-semibold tracking-tight">Create with AI</h1>
       <p className="text-sm text-neutral-600">
-        Stub only. Live Naano asks a few questions and generates an editable
-        brief. This demo does not call a model.
+        Describe the product and audience. Groq drafts an editable creator brief
+        you can publish for Opportunities.
       </p>
-      <Link
-        href="/brand/campaigns"
-        className="inline-flex rounded-full border border-neutral-300 px-4 py-2 text-sm"
-      >
-        Return to campaigns
-      </Link>
+      <AiCampaignForm />
     </section>
   );
 }

@@ -45,15 +45,46 @@ const TABS: {
 
 export function CollaborationsView({ rows }: { rows: CreatorCollabRow[] }) {
   const [tab, setTab] = useState("all");
+  const [query, setQuery] = useState("");
+  const [campaign, setCampaign] = useState("all");
   const filter = TABS.find((item) => item.id === tab);
+
+  const campaigns = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          rows
+            .map((row) => row.campaignTitle)
+            .filter((value): value is string => Boolean(value)),
+        ),
+      ).sort(),
+    [rows],
+  );
+
+  const searched = useMemo(() => {
+    return rows.filter((row) => {
+      if (campaign !== "all" && row.campaignTitle !== campaign) {
+        return false;
+      }
+      const q = query.trim().toLowerCase();
+      if (!q) {
+        return true;
+      }
+      return (
+        row.brandName.toLowerCase().includes(q) ||
+        (row.campaignTitle?.toLowerCase().includes(q) ?? false) ||
+        (row.nextAction?.toLowerCase().includes(q) ?? false)
+      );
+    });
+  }, [campaign, query, rows]);
 
   const visible = useMemo(() => {
     const statuses = filter?.statuses;
     if (!statuses) {
-      return rows;
+      return searched;
     }
-    return rows.filter((row) => statuses.includes(row.status));
-  }, [filter?.statuses, rows]);
+    return searched.filter((row) => statuses.includes(row.status));
+  }, [filter?.statuses, searched]);
 
   return (
     <section className="space-y-6">
@@ -64,11 +95,32 @@ export function CollaborationsView({ rows }: { rows: CreatorCollabRow[] }) {
         </p>
       </div>
 
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search brand, campaign, or next action"
+          className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm sm:max-w-sm"
+        />
+        <select
+          value={campaign}
+          onChange={(event) => setCampaign(event.target.value)}
+          className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+        >
+          <option value="all">All campaigns</option>
+          {campaigns.map((title) => (
+            <option key={title} value={title}>
+              {title}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div className="flex flex-wrap gap-2">
         {TABS.map((item) => {
           const count = item.statuses
-            ? rows.filter((row) => item.statuses!.includes(row.status)).length
-            : rows.length;
+            ? searched.filter((row) => item.statuses!.includes(row.status)).length
+            : searched.length;
           return (
             <button
               key={item.id}

@@ -2,8 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentCreator, getCurrentUser } from "@/lib/auth";
-import { COLLAB_STATUS } from "@/lib/booking";
+import { COLLAB_STATUS, insufficientWalletMessage } from "@/lib/booking";
+import { creditCreatorEarning } from "@/lib/creator-earnings";
 import { db } from "@/lib/db";
+import { formatEuro } from "@/lib/money";
+import { notifyUsers, workspaceMemberUserIds } from "@/lib/notifications";
 
 export type CollabActionState = {
   error?: string;
@@ -19,6 +22,7 @@ function revalidateBothSides() {
   revalidatePath("/creator/messages");
   revalidatePath("/creator");
   revalidatePath("/creator/opportunities");
+  revalidatePath("/creator/earnings");
 }
 
 /** Brand accepts a creator application (invitation_received → active). */
@@ -43,43 +47,103 @@ export async function brandRespondToApplication(
       workspaceId: current.workspace.id,
       status: COLLAB_STATUS.invitationReceived,
     },
-    include: { creator: true, campaign: true },
+    include: {
+      creator: { include: { profile: true } },
+      campaign: true,
+    },
   });
   if (!collaboration) {
     return { error: "Application not found." };
   }
 
   if (decision === "accept") {
-    await db.$transaction(async (tx) => {
-      await tx.collaboration.update({
-        where: { id: collaboration.id },
-        data: {
-          status: COLLAB_STATUS.active,
-          nextAction: "Creator to draft and publish post",
-        },
-      });
-      if (collaboration.campaignId) {
-        await tx.campaignApplication.updateMany({
+    const chargeCents = collaboration.agreedPriceCents;
+    if (current.workspace.walletBalanceCents < chargeCents) {
+      return {
+        error: insufficientWalletMessage(
+          current.workspace.walletBalanceCents,
+          chargeCents,
+        ),
+      };
+    }
+
+    try {
+      await db.$transaction(async (tx) => {
+        const debited = await tx.workspace.updateMany({
           where: {
-            campaignId: collaboration.campaignId,
-            creatorId: collaboration.creatorId,
+            id: current.workspace.id,
+            walletBalanceCents: { gte: chargeCents },
           },
-          data: { status: "accepted" },
+          data: { walletBalanceCents: { decrement: chargeCents } },
         });
-      }
-      const thread = await tx.messageThread.findFirst({
-        where: { collaborationId: collaboration.id },
-      });
-      if (thread) {
-        await tx.message.create({
+        if (debited.count !== 1) {
+          throw new Error("INSUFFICIENT");
+        }
+
+        await tx.ledgerEntry.create({
           data: {
-            threadId: thread.id,
-            sender: "system",
-            body: `${current.workspace.name} accepted ${collaboration.creator.name}'s application${collaboration.campaign ? ` to “${collaboration.campaign.title}”` : ""}. Collaboration is now active.`,
+            workspaceId: current.workspace.id,
+            type: "booking",
+            amountCents: -chargeCents,
+            description: `Accepted application · ${collaboration.creator.name}`,
+            collaborationId: collaboration.id,
           },
         });
-      }
-    });
+
+        await tx.collaboration.update({
+          where: { id: collaboration.id },
+          data: {
+            status: COLLAB_STATUS.active,
+            nextAction: "Creator to draft and publish post",
+          },
+        });
+        if (collaboration.campaignId) {
+          await tx.campaignApplication.updateMany({
+            where: {
+              campaignId: collaboration.campaignId,
+              creatorId: collaboration.creatorId,
+            },
+            data: { status: "accepted" },
+          });
+        }
+
+        await creditCreatorEarning(tx, {
+          creatorId: collaboration.creatorId,
+          amountCents: chargeCents,
+          collaborationId: collaboration.id,
+          description: `Earning · ${current.workspace.name}${collaboration.campaign ? ` · ${collaboration.campaign.title}` : ""}`,
+        });
+
+        const thread = await tx.messageThread.findFirst({
+          where: { collaborationId: collaboration.id },
+        });
+        if (thread) {
+          await tx.message.create({
+            data: {
+              threadId: thread.id,
+              sender: "system",
+              body: `${current.workspace.name} accepted ${collaboration.creator.name}'s application${collaboration.campaign ? ` to "${collaboration.campaign.title}"` : ""}. Collaboration is now active. ${formatEuro(chargeCents)} moved to the creator wallet.`,
+            },
+          });
+        }
+
+        if (collaboration.creator.profile) {
+          await notifyUsers(tx, {
+            userIds: [collaboration.creator.profile.userId],
+            title: "Application accepted",
+            body: `${current.workspace.name} accepted your application${collaboration.campaign ? ` for ${collaboration.campaign.title}` : ""}. ${formatEuro(chargeCents)} is available to withdraw.`,
+            href: "/creator/collaborations",
+          });
+        }
+      });
+    } catch {
+      return {
+        error: insufficientWalletMessage(
+          current.workspace.walletBalanceCents,
+          chargeCents,
+        ),
+      };
+    }
   } else {
     await db.$transaction(async (tx) => {
       await tx.collaboration.update({
@@ -108,6 +172,14 @@ export async function brandRespondToApplication(
             sender: "system",
             body: `${current.workspace.name} declined ${collaboration.creator.name}'s application.`,
           },
+        });
+      }
+      if (collaboration.creator.profile) {
+        await notifyUsers(tx, {
+          userIds: [collaboration.creator.profile.userId],
+          title: "Application declined",
+          body: `${current.workspace.name} declined your application${collaboration.campaign ? ` for ${collaboration.campaign.title}` : ""}.`,
+          href: "/creator/opportunities",
         });
       }
     });
@@ -154,6 +226,14 @@ export async function creatorRespondToBooking(
           nextAction: "Draft and publish sponsored post",
         },
       });
+
+      await creditCreatorEarning(tx, {
+        creatorId: current.creator.id,
+        amountCents: collaboration.agreedPriceCents,
+        collaborationId: collaboration.id,
+        description: `Earning · ${collaboration.workspace.name}`,
+      });
+
       const thread = await tx.messageThread.findFirst({
         where: { collaborationId: collaboration.id },
       });
@@ -166,6 +246,14 @@ export async function creatorRespondToBooking(
           },
         });
       }
+
+      const brandUsers = await workspaceMemberUserIds(tx, collaboration.workspaceId);
+      await notifyUsers(tx, {
+        userIds: brandUsers,
+        title: "Booking accepted",
+        body: `${current.creator.name} accepted your booking (${formatEuro(collaboration.agreedPriceCents)}).`,
+        href: "/brand/collaborations",
+      });
     });
   } else {
     await db.$transaction(async (tx) => {
@@ -177,7 +265,6 @@ export async function creatorRespondToBooking(
         },
       });
 
-      // Refund wallet for declined bookings/offers.
       await tx.workspace.update({
         where: { id: collaboration.workspaceId },
         data: { walletBalanceCents: { increment: collaboration.agreedPriceCents } },
@@ -204,6 +291,14 @@ export async function creatorRespondToBooking(
           },
         });
       }
+
+      const brandUsers = await workspaceMemberUserIds(tx, collaboration.workspaceId);
+      await notifyUsers(tx, {
+        userIds: brandUsers,
+        title: "Booking declined",
+        body: `${current.creator.name} declined your booking. ${formatEuro(collaboration.agreedPriceCents)} was refunded to your wallet.`,
+        href: "/brand/billing",
+      });
     });
   }
 

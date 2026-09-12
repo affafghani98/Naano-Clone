@@ -2,6 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import {
+  NotificationsMenu,
+  type NotificationItem,
+} from "../_components/notifications-menu";
 import { logout } from "../actions/auth";
 import { formatEuro } from "@/lib/money";
 
@@ -14,10 +18,15 @@ const CHECKLIST = [
 type Props = {
   userName: string;
   walletBalanceCents: number;
+  notifications: NotificationItem[];
 };
 
-export function BrandTopBar({ userName, walletBalanceCents }: Props) {
-  const [open, setOpen] = useState<"started" | "bell" | "profile" | null>(null);
+export function BrandTopBar({
+  userName,
+  walletBalanceCents,
+  notifications,
+}: Props) {
+  const [open, setOpen] = useState<"started" | "profile" | null>(null);
 
   function toggle(next: typeof open) {
     setOpen((current) => (current === next ? null : next));
@@ -62,21 +71,7 @@ export function BrandTopBar({ userName, walletBalanceCents }: Props) {
         ) : null}
       </div>
 
-      <div className="relative">
-        <button
-          type="button"
-          onClick={() => toggle("bell")}
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 text-sm"
-          aria-label="Notifications"
-        >
-          <span aria-hidden>🔔</span>
-        </button>
-        {open === "bell" ? (
-          <div className="absolute right-0 z-20 mt-2 w-64 rounded-2xl border border-neutral-200 bg-white p-3 text-sm text-neutral-600 shadow-sm">
-            No notifications yet.
-          </div>
-        ) : null}
-      </div>
+      <NotificationsMenu items={notifications} />
 
       <div className="relative">
         <button
@@ -103,7 +98,7 @@ export function BrandTopBar({ userName, walletBalanceCents }: Props) {
               rel="noreferrer"
               className="block rounded-lg px-2 py-1.5 hover:bg-neutral-50"
             >
-              Book a call
+              Book a call (demo)
             </a>
             <Link
               href="/brand/settings?tab=integrations"

@@ -6,12 +6,13 @@ export default function StartFromLinkPage() {
       <Link href="/brand/campaigns/new" className="text-sm underline">
         Back
       </Link>
+      <p className="text-xs uppercase tracking-wide text-neutral-500">Demo only</p>
       <h1 className="text-3xl font-semibold tracking-tight">
         Start from your link
       </h1>
       <p className="text-sm text-neutral-600">
-        Stub only. Live Naano would reuse structure from a pasted campaign or
-        landing-page URL.
+        This path is not wired. Use Write a brief yourself or Create with AI for
+        a live campaign.
       </p>
       <label className="block space-y-1 text-sm">
         <span>Campaign URL</span>

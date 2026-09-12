@@ -37,6 +37,7 @@ Website analysis is mocked (~16s progress, no live crawl).
 - Booking is wallet-funded. Insufficient funds block the booking; the wallet cannot go negative.
 - Campaign create paths (AI / from-link) and Pixel Naano install are stubs.
 - Results clicks/reach are mocked; attribution rows use booked creators.
+- Creator message threads open when a booking is sent (`invitation_sent`). Live Naano waits until the creator accepts; this rebuild has no accept flow.
 - Onboarding step 3 was not captured on the live site. This rebuild shows a short “marketplace is ready” screen, then Overview.
 - AI website analysis, payments, and Pixel Naano are mocked.
 - Integrations / MCP are out of scope.
